@@ -63,19 +63,19 @@ svg text{fill:var(--ink);font-family:var(--font-body)}
 
 /* Header */
 .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.topbar-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.topbar-in{max-width:1320px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);flex-shrink:0}
 .brand-name{font-family:var(--font-display);font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
 .brand-name b{color:var(--green);font-weight:800}
 .brand-tag{display:block;font-size:.7rem;color:var(--muted);font-family:var(--font-body);letter-spacing:.02em;margin-top:-2px}
 .nav{margin-left:auto;display:flex;gap:2px;align-items:center;flex-wrap:wrap}
-.nav a{text-decoration:none;color:var(--ink);padding:9px 11px;border-radius:999px;font-size:.92rem;font-weight:500;white-space:nowrap}
+.nav a{text-decoration:none;color:var(--ink);padding:8px 9px;border-radius:999px;font-size:.88rem;font-weight:500;white-space:nowrap}
 .nav a:hover{background:var(--surface-2)}
 .nav a[aria-current="page"]{background:var(--blue);color:var(--blue-ink)}
 .icon-btn.menu-btn{display:none;margin-left:auto}
 .net{font-size:.75rem;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
 .net.off{background:var(--yellow-soft);color:var(--ink)}
-@media (max-width:1180px){
+@media (max-width:1300px){
   .icon-btn.menu-btn{display:inline-flex}
   .nav{display:none;position:absolute;left:0;right:0;top:100%;background:var(--surface);border-bottom:1px solid var(--line);padding:10px 16px 16px;flex-direction:column;align-items:stretch;box-shadow:var(--shadow)}
   .nav.open{display:flex}
@@ -312,6 +312,7 @@ input[type=range]{width:100%;accent-color:var(--blue);min-height:36px}
 
 .view,.stack,.section,.activity,.card,.panel,.q,.post,.modal,.concept,.step > div,.mod-body,.hero-copy{grid-template-columns:minmax(0,1fr)}
 h1[tabindex="-1"]:focus,main:focus{outline:none}
+@media (max-width:520px){.net{display:none}.brand-tag{display:none}}
 footer.foot{border-top:1px solid var(--line);margin-top:24px}
 footer.foot .in{max-width:1180px;margin:0 auto;padding:24px 16px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;font-size:.88rem;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
@@ -340,6 +341,7 @@ footer.foot .in{max-width:1180px;margin:0 auto;padding:24px 16px;display:flex;ga
       <a href="#laboratorio">Laboratorio</a>
       <a href="#retos">Retos</a>
       <a href="#comunidad">Comunidad</a>
+      <a href="#autoevaluacion">Autoevaluación</a>
       <a href="#progreso">Mi progreso</a>
       <a href="#acerca">Propósito</a>
     </nav>
@@ -579,7 +581,8 @@ const BADGES = [
   {id:"laboratorista", name:"Laboratorista", desc:"Completa el laboratorio", c:"green", sym:"L"},
   {id:"sin-pistas", name:"Mente propia", desc:"Supera un nivel sin pistas", c:"yellow", sym:"★"},
   {id:"proyecto", name:"Proyecto en marcha", desc:"Completa la plantilla del reto", c:"green", sym:"P"},
-  {id:"colaborador", name:"Colaborador", desc:"Haz un aporte en la comunidad", c:"blue", sym:"C"}
+  {id:"colaborador", name:"Colaborador", desc:"Haz un aporte en la comunidad", c:"blue", sym:"C"},
+  {id:"reflexivo", name:"Mente reflexiva", desc:"Completa la autoevaluación", c:"yellow", sym:"A"}
 ];
 
 const MOTIVATION = ["Cada intento te acerca a la respuesta.","Equivocarse es parte de investigar.","Buen razonamiento. Sigue así.","Los científicos también revisan sus ideas.","Observa, piensa y vuelve a intentarlo."];
@@ -638,7 +641,7 @@ const PHET = [
 ];
 /* ================= NÚCLEO: estado, utilidades ================= */
 const KEY = "explorafisica_v1";
-const fresh = () => ({diag:null, visited:{}, acts:{}, quizzes:{}, nums:{}, cls:{}, chal:{}, badges:{}, lab:{}, obs:{rows:[], note:""}, project:{rows:[]}, posts:[], comments:{}, likes:{}, sim:{}});
+const fresh = () => ({diag:null, visited:{}, acts:{}, quizzes:{}, nums:{}, cls:{}, chal:{}, badges:{}, lab:{}, obs:{rows:[], note:""}, project:{rows:[]}, posts:[], comments:{}, likes:{}, sim:{}, self:{ans:{}, refl:{}}, selfHist:[]});
 let storageOK = true;
 let S = (() => {
   try {
@@ -781,6 +784,7 @@ function checkBadges(){
   if (S.acts["m4-proyecto"]) award("proyecto");
   if (S.posts.length) award("colaborador");
   if (S.diag) award("primer-paso");
+  if (S.acts["autoevaluacion"]) award("reflexivo");
 }
 function updateStatusEl(el){
   const d = isDone(el.dataset.status);
@@ -1047,7 +1051,7 @@ function modProgress(id){ const a = MODULES[id].activities; return {done:a.filte
 /* ================= VISTAS ================= */
 function viewHome(app){
   const started = Object.keys(S.acts).length || S.diag;
-  const routeItems = [["diagnostico","Diagnóstico", !!S.diag],["modulos","Módulos", Object.keys(S.visited).length>0],["laboratorio","Laboratorio", !!S.acts["lab-observacion"]],["retos","Retos", Object.values(S.chal).some(c=>c.solved)],["comunidad","Comunidad", S.posts.length>0]];
+  const routeItems = [["diagnostico","Diagnóstico", !!S.diag],["modulos","Módulos", Object.keys(S.visited).length>0],["laboratorio","Laboratorio", !!S.acts["lab-observacion"]],["retos","Retos", Object.values(S.chal).some(c=>c.solved)],["comunidad","Comunidad", S.posts.length>0],["autoevaluacion","Autoevaluación", !!S.acts["autoevaluacion"]]];
   app.innerHTML = `<div class="view">
     <section class="hero">
       <div class="hero-copy">
@@ -1372,6 +1376,96 @@ function buildM4(acts){
     save(); markDone("m4-comparte"); checkBadges(); location.hash = "#comunidad";
   };
 }
+/* ================= AUTOEVALUACIÓN ================= */
+const SELF = [
+  {area:"Módulo 1 · Movimiento", link:"m1", acts:MODULES.m1.activities.map(a=>a[0]), items:["Diferencio movimiento y reposo usando un punto de referencia.","Explico la diferencia entre distancia y desplazamiento.","Calculo la rapidez con v = d ÷ t y uso las unidades correctas.","Reconozco la aceleración en situaciones de mi entorno."]},
+  {area:"Módulo 2 · Fuerzas y presión", link:"m2", acts:MODULES.m2.activities.map(a=>a[0]), items:["Identifico fuerzas y sus efectos en situaciones cotidianas.","Calculo la presión con P = F ÷ A.","Explico por qué la presión del agua aumenta con la profundidad.","Doy ejemplos del principio de Pascal en el campo o en el hogar."]},
+  {area:"Módulo 3 · La luz", link:"m3", acts:MODULES.m3.activities.map(a=>a[0]), items:["Clasifico fuentes de luz naturales y artificiales.","Explico por qué se forman las sombras.","Diferencio reflexión y refracción con ejemplos.","Reconozco materiales transparentes, translúcidos y opacos."]},
+  {area:"Investigación y experimentación", link:"laboratorio", acts:["lab-prediccion","lab-observacion","lab-analisis","m4-proyecto"], items:["Hago predicciones antes de experimentar.","Registro observaciones y datos con orden.","Comparo mis resultados con mi predicción y explico las diferencias.","Diseño un experimento justo cambiando una sola variable."]},
+  {area:"Trabajo en equipo y ciudadanía digital", link:"comunidad", acts:["m4-comparte"], items:["Aporto ideas y escucho a mis compañeros de equipo.","Comento con respeto el trabajo de otros.","Verifico la información antes de compartirla.","Cuido mis datos personales y los de mis compañeros."]}
+];
+const SELF_LV = ["Aún no","Con ayuda","Casi siempre","Lo logro"];
+const SELF_REFL = ["¿Qué fue lo más importante que aprendí?","¿Qué se me dificultó y por qué?","¿Qué haré para mejorar?","¿Cómo puedo usar lo aprendido en mi comunidad?"];
+const SELF_TOTAL = SELF.reduce((n,a)=>n+a.items.length,0);
+
+function selfAverages(ans){
+  return SELF.map((a,i) => { const v = a.items.map((_,j)=>ans[i+"-"+j]).filter(Boolean); return v.length ? v.reduce((x,y)=>x+y,0)/v.length : 0; });
+}
+function selfLabel(avg){ return avg >= 3.5 ? ["ok","Fortaleza"] : avg >= 2.5 ? ["blue","En buen camino"] : ["yellow","Por reforzar"]; }
+
+function viewSelf(app){
+  if (!S.self) S.self = {ans:{}, refl:{}};
+  if (!S.selfHist) S.selfHist = [];
+  const st = S.self;
+  if (st.done) return selfResult(app);
+  app.innerHTML = `<div class="view">
+    <div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Autoevaluación</span><span class="eyebrow">Reflexiono sobre mi aprendizaje</span><h1>Autoevaluación</h1></div>
+    ${fisiSay("Esto no es una nota.", "Piensa en lo que hiciste en ExploraFísica y marca con honestidad qué tanto lo logras. Te servirá para saber qué repasar.")}
+    <div class="panel"><b>¿Cómo marcar?</b><div class="row small">${SELF_LV.map((l,i)=>`<span class="chip ${["","yellow","blue","ok"][i]}">${i+1} · ${l}</span>`).join("")}</div>
+      <div class="stack"><div class="row small" style="justify-content:space-between"><span>Afirmaciones respondidas</span><span class="mono" id="sfCount"></span></div><div class="bar"><i id="sfBar"></i></div></div></div>
+    ${SELF.map((a,i)=>`<section class="activity" aria-labelledby="sfh${i}"><div class="activity-head"><div class="t"><span class="eyebrow">Parte ${i+1} de ${SELF.length+1}</span><h3 id="sfh${i}">${a.area}</h3></div></div>
+      <div class="cls">${a.items.map((it,j)=>`<div class="cls-item"><span class="lbl" id="sf-${i}-${j}">${it}</span>
+        <div class="seg" role="group" aria-labelledby="sf-${i}-${j}">${SELF_LV.map((l,k)=>`<button type="button" data-k="${i}-${j}" data-v="${k+1}" aria-pressed="${st.ans[i+"-"+j]===k+1}">${l}</button>`).join("")}</div></div>`).join("")}</div></section>`).join("")}
+    <section class="activity" aria-labelledby="sfhr"><div class="activity-head"><div class="t"><span class="eyebrow">Parte ${SELF.length+1} de ${SELF.length+1}</span><h3 id="sfhr">Mi reflexión</h3><p class="muted">Escribe con tus palabras. Es opcional, pero te ayuda a aprender más.</p></div></div>
+      ${SELF_REFL.map((q,i)=>`<div class="field"><label class="fl" for="sfr${i}">${q}</label><textarea id="sfr${i}" data-r="${i}">${esc(st.refl[i]||"")}</textarea></div>`).join("")}</section>
+    <div class="row"><button class="btn btn-primary" id="sfDone">Ver mi resultado</button></div>
+    <p class="help" id="sfMsg" aria-live="polite">Tus respuestas se guardan en este dispositivo mientras avanzas.</p></div>`;
+  const count = () => { const n = Object.keys(st.ans).length; $("#sfCount").textContent = `${n}/${SELF_TOTAL}`; $("#sfBar").style.width = (n/SELF_TOTAL*100)+"%"; return n; };
+  count();
+  app.addEventListener("click", e => {
+    const b = e.target.closest("[data-v]"); if (!b) return;
+    st.ans[b.dataset.k] = +b.dataset.v; save();
+    $$(`[data-k="${b.dataset.k}"]`, app).forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    count();
+  });
+  app.addEventListener("input", e => { const t = e.target; if (t.dataset.r !== undefined) { st.refl[t.dataset.r] = t.value; save(); } });
+  $("#sfDone").onclick = () => {
+    const n = count();
+    if (n < SELF_TOTAL) {
+      $("#sfMsg").textContent = `Te faltan ${SELF_TOTAL-n} afirmaciones por marcar.`;
+      const first = SELF.flatMap((a,i)=>a.items.map((_,j)=>i+"-"+j)).find(k=>!st.ans[k]);
+      const el = $(`[data-k="${first}"]`, app); if (el) { el.closest(".cls-item").scrollIntoView({block:"center", behavior:"smooth"}); el.focus({preventScroll:true}); }
+      return;
+    }
+    st.done = true; st.date = Date.now();
+    S.selfHist.push({date:st.date, avgs:selfAverages(st.ans)}); if (S.selfHist.length > 10) S.selfHist.shift();
+    save(); markDone("autoevaluacion", true); checkBadges(); window.scrollTo(0,0); selfResult(app);
+  };
+}
+
+function selfSummaryText(){
+  const st = S.self, avgs = selfAverages(st.ans);
+  return ["ExploraFísica · Mi autoevaluación", "Fecha: " + new Date(st.date||Date.now()).toLocaleDateString("es-CO"), "",
+    ...SELF.flatMap((a,i)=>["== "+a.area+" ("+selfLabel(avgs[i])[1]+") ==", ...a.items.map((it,j)=>`- ${it} → ${SELF_LV[(st.ans[i+"-"+j]||1)-1]}`), ""]),
+    "== Mi reflexión ==", ...SELF_REFL.map((q,i)=>`${q}\n${(st.refl[i]||"").trim() || "(sin respuesta)"}`)].join("\n");
+}
+
+function selfResult(app){
+  const st = S.self, avgs = selfAverages(st.ans), hist = S.selfHist || [];
+  const prev = hist.length >= 2 ? hist[hist.length-2] : null;
+  const total = avgs.reduce((x,y)=>x+y,0)/avgs.length;
+  const weak = SELF.map((a,i)=>({a,i,v:avgs[i]})).filter(x=>x.v<2.5);
+  app.innerHTML = `<div class="view">
+    <div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Autoevaluación</span><span class="eyebrow">Resultado · ${new Date(st.date).toLocaleDateString("es-CO")}</span><h1>Mi autoevaluación</h1></div>
+    ${fisiSay(total >= 3.5 ? "¡Te sientes seguro en casi todo!" : total >= 2.5 ? "Vas por buen camino." : "Reconocer lo que falta es el primer paso.", weak.length ? `Te sugiero repasar: ${weak.map(x=>x.a.area).join(", ")}.` : "Sigue retándote con los retos de nivel Científico y el proyecto colaborativo.")}
+    <section class="section"><div class="section-head"><h2>Cómo me veo en cada área</h2><p class="muted small">Compara lo que sientes con tu evidencia: las actividades que completaste en el OVA.</p></div>
+      <div class="grid g2">${SELF.map((a,i)=>{ const [c,l] = selfLabel(avgs[i]); const done = a.acts.filter(isDone).length; const p = prev ? Math.round((avgs[i]-prev.avgs[i])/3*100) : null;
+        return `<div class="card"><div class="row" style="justify-content:space-between"><h3>${a.area}</h3><span class="chip ${c}">${l}</span></div>
+          <div class="stack"><div class="row small" style="justify-content:space-between"><span>Cómo me siento</span><span class="mono">${avgs[i].toFixed(1).replace(".",",")} / 4</span></div><div class="bar ${c==="yellow"?"yellow":c==="blue"?"blue":""}"><i style="width:${avgs[i]/4*100}%"></i></div></div>
+          <p class="small muted">Evidencia: ${done} de ${a.acts.length} actividades completadas.${p!==null && p!==0 ? ` Respecto a tu autoevaluación anterior: ${p>0?"subiste":"bajaste"} ${Math.abs(p)} puntos.` : ""}</p>
+          ${avgs[i] >= 3 && done < a.acts.length/2 ? `<p class="small">Fisi: te sientes seguro, pero aún tienes actividades pendientes. Hazlas para comprobarlo.</p>` : ""}
+          ${avgs[i] < 2.5 ? `<a class="btn btn-ghost btn-sm" href="#${a.link}" style="justify-self:start">Repasar</a>` : ""}</div>`; }).join("")}</div></section>
+    <section class="section"><div class="section-head"><h2>Mi reflexión</h2></div>
+      <div class="grid g2">${SELF_REFL.map((q,i)=>`<div class="card"><h4>${q}</h4><p class="small" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc((st.refl[i]||"").trim()) || `<span class="muted">Sin respuesta.</span>`}</p></div>`).join("")}</div></section>
+    <section class="grid g2">
+      <div class="panel"><h3>Compártela con tu docente</h3><p class="small">Descarga o copia tu autoevaluación. No incluye datos personales.</p><div class="row"><button class="btn btn-ghost" id="sfDl">Descargar</button><button class="btn btn-ghost" id="sfCp">Copiar texto</button></div></div>
+      <div class="panel"><h3>Volver a autoevaluarme</h3><p class="small">Hazlo después de repasar para ver cómo avanzas. Se guarda la comparación con la anterior.</p><div class="row"><button class="btn btn-primary" id="sfAgain">Nueva autoevaluación</button><button class="btn btn-ghost" id="sfEdit">Editar respuestas</button></div></div>
+    </section></div>`;
+  $("#sfDl").onclick = () => offerFile("ExploraFisica-autoevaluacion.txt", selfSummaryText());
+  $("#sfCp").onclick = () => copyText(selfSummaryText());
+  $("#sfAgain").onclick = () => { S.self = {ans:{}, refl:{}}; save(); route(); };
+  $("#sfEdit").onclick = () => { S.self.done = false; if (S.selfHist.length) S.selfHist.pop(); save(); route(); };
+}
 /* ================= LABORATORIO ================= */
 const HOLES = [{k:"A", h:19, n:"Superior"},{k:"B", h:12, n:"Medio"},{k:"C", h:5, n:"Inferior"}];
 function viewLab(app){
@@ -1527,7 +1621,7 @@ function levelCheck(){
 
 /* ================= MI PROGRESO ================= */
 function viewProgreso(app){
-  const allActs = Object.values(MODULES).flatMap(m=>m.activities.map(a=>a[0])).concat(["lab-prediccion","lab-observacion","lab-analisis"]);
+  const allActs = Object.values(MODULES).flatMap(m=>m.activities.map(a=>a[0])).concat(["lab-prediccion","lab-observacion","lab-analisis","autoevaluacion"]);
   const actsDone = allActs.filter(isDone).length;
   const visited = ["m1","m2","m3","m4"].filter(k=>S.visited[k]).length;
   const chalDone = CHALLENGES.filter(c=>S.chal[c.id]?.solved).length;
@@ -1548,7 +1642,8 @@ function viewProgreso(app){
     </section>
     <section class="section"><div class="section-head"><h2>Módulos y actividades</h2></div>
       <div class="grid g2">${["m1","m2","m3","m4"].map(k=>{ const M = MODULES[k], p = modProgress(k); return `<div class="card"><div class="row" style="justify-content:space-between"><h3>Módulo ${M.n}. ${M.short}</h3><span class="chip ${S.visited[k]?"green":""}">${S.visited[k]?"Visitado":"Sin visitar"}</span></div><div class="bar"><i style="width:${p.done/p.total*100}%"></i></div><ul class="clean small">${M.activities.map(([a,l])=>`<li>${isDone(a)?"✓":"○"} ${l}</li>`).join("")}</ul><a class="btn btn-ghost btn-sm" href="#${k}" style="justify-self:start">Abrir módulo</a></div>`;}).join("")}
-      <div class="card"><div class="row" style="justify-content:space-between"><h3>Laboratorio</h3></div><ul class="clean small">${[["lab-prediccion","Predicción"],["lab-observacion","Observaciones"],["lab-analisis","Análisis"]].map(([a,l])=>`<li>${isDone(a)?"✓":"○"} ${l}</li>`).join("")}</ul><a class="btn btn-ghost btn-sm" href="#laboratorio" style="justify-self:start">Abrir laboratorio</a></div></div>
+      <div class="card"><div class="row" style="justify-content:space-between"><h3>Laboratorio</h3></div><ul class="clean small">${[["lab-prediccion","Predicción"],["lab-observacion","Observaciones"],["lab-analisis","Análisis"]].map(([a,l])=>`<li>${isDone(a)?"✓":"○"} ${l}</li>`).join("")}</ul><a class="btn btn-ghost btn-sm" href="#laboratorio" style="justify-self:start">Abrir laboratorio</a></div>
+      <div class="card"><div class="row" style="justify-content:space-between"><h3>Autoevaluación</h3><span class="chip ${isDone("autoevaluacion")?"green":""}">${isDone("autoevaluacion")?"Hecha":"Pendiente"}</span></div><p class="small">${S.self&&S.self.done ? SELF.map((a,i)=>`${a.area}: ${selfLabel(selfAverages(S.self.ans)[i])[1]}`).join(" · ") : "Reflexiona sobre lo que aprendiste y lo que debes repasar."}</p><a class="btn btn-ghost btn-sm" href="#autoevaluacion" style="justify-self:start">${isDone("autoevaluacion")?"Ver autoevaluación":"Hacer autoevaluación"}</a></div></div>
     </section>
     <section class="section"><div class="section-head"><h2>Resultados de los cuestionarios</h2></div>
       <div class="tbl-wrap"><table><thead><tr><th>Cuestionario</th><th class="num">Último</th><th class="num">Mejor</th><th class="num">Intentos</th><th>Acción</th></tr></thead><tbody>
@@ -1658,7 +1753,7 @@ function viewAcerca(app){
 }
 
 /* ================= ENRUTADOR ================= */
-const ROUTES = {inicio:viewHome, diagnostico:viewDiag, modulos:viewModules, m1:a=>viewModule(a,"m1"), m2:a=>viewModule(a,"m2"), m3:a=>viewModule(a,"m3"), m4:a=>viewModule(a,"m4"), laboratorio:viewLab, retos:viewRetos, progreso:viewProgreso, comunidad:viewComunidad, acerca:viewAcerca};
+const ROUTES = {inicio:viewHome, diagnostico:viewDiag, modulos:viewModules, m1:a=>viewModule(a,"m1"), m2:a=>viewModule(a,"m2"), m3:a=>viewModule(a,"m3"), m4:a=>viewModule(a,"m4"), laboratorio:viewLab, retos:viewRetos, progreso:viewProgreso, autoevaluacion:viewSelf, comunidad:viewComunidad, acerca:viewAcerca};
 const NAVMAP = {diagnostico:"modulos", m1:"modulos", m2:"modulos", m3:"modulos", m4:"modulos"};
 let firstRoute = true;
 function route(){
