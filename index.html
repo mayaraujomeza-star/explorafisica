@@ -1,0 +1,1683 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ExploraFísica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Lexend:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: cuaderno de campo científico — barra superior fija, vistas por secciones (hash), tarjetas solo para objetos manipulables */
+:root{
+  --bg:#F2F6F3; --surface:#FFFFFF; --surface-2:#E6EFEA; --ink:#13241E; --muted:#4A5F57; --line:#CADBD2;
+  --blue:#1A5DB0; --blue-ink:#FFFFFF; --blue-soft:#DCE8F8; --sky:#D7E9F7;
+  --green:#2A7A4A; --green-ink:#FFFFFF; --green-soft:#DCF0E3; --hill:#9CCB9F; --hill-2:#6FAE7C;
+  --yellow:#F4B400; --yellow-ink:#2E2100; --yellow-soft:#FFF1C2;
+  --ok:#1C7543; --ok-soft:#DBF1E3; --bad:#AE2A20; --bad-soft:#FBE4E1;
+  --skin:#E2A878; --skin-2:#B87A4E;
+  --shadow:0 1px 2px rgba(19,36,30,.06),0 6px 20px rgba(19,36,30,.07);
+  --font-display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --font-body:'Lexend','Segoe UI',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --r:14px; --r-sm:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1916; --surface:#15231F; --surface-2:#1C2E28; --ink:#E6F0EB; --muted:#A2B8AF; --line:#2B4239;
+  --blue:#74AAF2; --blue-ink:#08182C; --blue-soft:#18293F; --sky:#14273A;
+  --green:#5DC28B; --green-ink:#07210F; --green-soft:#163223; --hill:#24513A; --hill-2:#2F6A49;
+  --yellow:#FFC83A; --yellow-ink:#251A00; --yellow-soft:#382D0C;
+  --ok:#62C98F; --ok-soft:#153222; --bad:#FF8E84; --bad-soft:#3A1916;
+  --skin:#D59A6C; --skin-2:#9E6640;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1916; --surface:#15231F; --surface-2:#1C2E28; --ink:#E6F0EB; --muted:#A2B8AF; --line:#2B4239;
+  --blue:#74AAF2; --blue-ink:#08182C; --blue-soft:#18293F; --sky:#14273A;
+  --green:#5DC28B; --green-ink:#07210F; --green-soft:#163223; --hill:#24513A; --hill-2:#2F6A49;
+  --yellow:#FFC83A; --yellow-ink:#251A00; --yellow-soft:#382D0C;
+  --ok:#62C98F; --ok-soft:#153222; --bad:#FF8E84; --bad-soft:#3A1916;
+  --skin:#D59A6C; --skin-2:#9E6640;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;margin:0}
+h1,h2,h3,h4{font-family:var(--font-display);line-height:1.15;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(2rem,5.5vw,3.4rem);font-weight:800}
+h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800}
+h3{font-size:1.2rem;font-weight:600}
+h4{font-size:1.02rem;font-weight:600}
+p{margin:0}
+a{color:var(--blue)}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.eyebrow{font-size:.78rem;text-transform:uppercase;letter-spacing:.09em;font-weight:600;color:var(--green)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.skip{position:absolute;left:-999px;top:8px;background:var(--yellow);color:var(--yellow-ink);padding:8px 14px;border-radius:8px;z-index:100}
+.skip:focus{left:16px}
+
+/* SVG fills */
+.f-blue{fill:var(--blue)} .f-blue-soft{fill:var(--blue-soft)} .f-green{fill:var(--green)} .f-green-soft{fill:var(--green-soft)}
+.f-yellow{fill:var(--yellow)} .f-yellow-soft{fill:var(--yellow-soft)} .f-ink{fill:var(--ink)} .f-surface{fill:var(--surface)} .f-bg{fill:var(--bg)}
+.f-sky{fill:var(--sky)} .f-hill{fill:var(--hill)} .f-hill2{fill:var(--hill-2)} .f-hair{fill:#1D1A17} .s-hair{stroke:#1D1A17} .f-skin{fill:var(--skin)} .f-skin2{fill:var(--skin-2)} .f-line{fill:var(--line)} .f-muted{fill:var(--muted)}
+.s-ink{stroke:var(--ink)} .s-blue{stroke:var(--blue)} .s-yellow{stroke:var(--yellow)} .s-green{stroke:var(--green)} .s-muted{stroke:var(--muted)} .s-surface{stroke:var(--surface)} .s-bad{stroke:var(--bad)}
+svg text{fill:var(--ink);font-family:var(--font-body)}
+
+/* Header */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);flex-shrink:0}
+.brand-name{font-family:var(--font-display);font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
+.brand-name b{color:var(--green);font-weight:800}
+.brand-tag{display:block;font-size:.7rem;color:var(--muted);font-family:var(--font-body);letter-spacing:.02em;margin-top:-2px}
+.nav{margin-left:auto;display:flex;gap:2px;align-items:center;flex-wrap:wrap}
+.nav a{text-decoration:none;color:var(--ink);padding:9px 11px;border-radius:999px;font-size:.92rem;font-weight:500;white-space:nowrap}
+.nav a:hover{background:var(--surface-2)}
+.nav a[aria-current="page"]{background:var(--blue);color:var(--blue-ink)}
+.icon-btn.menu-btn{display:none;margin-left:auto}
+.net{font-size:.75rem;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.net.off{background:var(--yellow-soft);color:var(--ink)}
+@media (max-width:1180px){
+  .icon-btn.menu-btn{display:inline-flex}
+  .nav{display:none;position:absolute;left:0;right:0;top:100%;background:var(--surface);border-bottom:1px solid var(--line);padding:10px 16px 16px;flex-direction:column;align-items:stretch;box-shadow:var(--shadow)}
+  .nav.open{display:flex}
+  .nav a{padding:13px 14px;border-radius:10px;font-size:1rem}
+}
+
+/* Layout */
+main{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 64px}
+.view{display:grid;gap:36px}
+.section{display:grid;gap:16px}
+.section-head{display:grid;gap:6px;max-width:68ch}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:12px;align-content:start;min-width:0}
+.panel{background:var(--surface-2);border-radius:var(--r);padding:20px;display:grid;gap:12px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:grid;gap:10px}
+.crumbs{font-size:.88rem;color:var(--muted)}
+.crumbs a{color:var(--muted)}
+ul.clean{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.ticks{padding-left:1.2em;margin:0;display:grid;gap:4px}
+
+/* Buttons */
+.btn{appearance:none;border:2px solid transparent;font:inherit;font-weight:600;font-size:1rem;min-height:48px;padding:10px 20px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:transform .12s ease,background .15s ease;line-height:1.2;text-align:center}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--blue);color:var(--blue-ink)}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-yellow{background:var(--yellow);color:var(--yellow-ink)}
+.btn-yellow:hover{filter:brightness(1.05)}
+.btn-green{background:var(--green);color:var(--green-ink)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-sm{min-height:40px;padding:6px 14px;font-size:.92rem}
+.btn-danger{background:var(--bad);color:var(--surface)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.icon-btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:44px;min-width:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font:inherit;gap:6px;padding:0 12px}
+
+/* Chips */
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--ink)}
+.chip.blue{background:var(--blue-soft)} .chip.green{background:var(--green-soft)} .chip.yellow{background:var(--yellow-soft)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.net-note{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
+
+/* Hero */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:32px;align-items:center}
+.hero h1 span{color:var(--green)}
+.hero h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--yellow) 62%,var(--yellow) 92%,transparent 92%);padding:0 .08em}
+.hero-copy{display:grid;gap:18px;min-width:0}
+.hero-copy p.lead{font-size:1.15rem;max-width:44ch;color:var(--muted)}
+.hero-art{min-width:0}
+.hero-art svg{width:100%;height:auto;display:block;border-radius:24px}
+@media (max-width:860px){.hero{grid-template-columns:1fr}.hero-art{order:-1}}
+.benefit{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;padding:18px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.benefit svg{width:44px;height:44px}
+.route{display:flex;gap:8px;flex-wrap:wrap;counter-reset:r;list-style:none;margin:0;padding:0}
+.route li{counter-increment:r}
+.route a{display:flex;align-items:center;gap:10px;padding:10px 16px 10px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);text-decoration:none;color:var(--ink);font-weight:500;min-height:48px}
+.route a::before{content:counter(r);display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--green-soft);color:var(--green);font-weight:700;font-size:.85rem}
+.route a.done::before{content:"✓";background:var(--green);color:var(--green-ink)}
+
+/* Fisi bubble */
+.fisi{display:grid;grid-template-columns:72px 1fr;gap:14px;align-items:center;background:var(--yellow-soft);border-radius:var(--r);padding:14px 18px 14px 10px}
+.fisi svg{width:72px;height:auto}
+.fisi .say{display:grid;gap:4px;min-width:0}
+.fisi .say strong{font-family:var(--font-display);font-size:1rem}
+.fisi.compact{grid-template-columns:52px 1fr;padding:10px 14px 10px 8px}
+.fisi.compact svg{width:52px}
+@media (prefers-reduced-motion:no-preference){.fisi svg .wave{animation:wave 2.4s ease-in-out infinite;transform-origin:70px 84px}}
+@keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-12deg)}}
+
+/* Module cards */
+.mod-card{display:grid;grid-template-rows:auto 1fr;padding:0;overflow:hidden}
+.mod-art{height:150px;display:grid;place-items:center}
+.mod-art svg{height:120px;width:auto;max-width:100%}
+.mod-body{padding:18px 20px 20px;display:grid;gap:12px;align-content:start}
+.mod-body details summary{cursor:pointer;font-weight:600;min-height:40px;display:flex;align-items:center}
+.bar{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--green);border-radius:999px;transition:width .4s ease}
+.bar.blue > i{background:var(--blue)} .bar.yellow > i{background:var(--yellow)}
+
+/* Module page */
+.mod-head{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.mod-head .mod-icon{width:96px;height:96px;border-radius:24px;display:grid;place-items:center}
+.mod-head .mod-icon svg{width:72px;height:72px}
+@media (max-width:560px){.mod-head{grid-template-columns:1fr}}
+.concept{display:grid;gap:10px}
+.concept .formula{font-family:var(--font-mono);background:var(--blue-soft);padding:6px 12px;border-radius:8px;justify-self:start;font-size:.95rem}
+.concept .ex{border-left:3px solid var(--green);padding-left:12px;font-size:.95rem}
+.concept details{border-top:1px dashed var(--line);padding-top:8px}
+.concept summary{cursor:pointer;color:var(--blue);font-weight:600;min-height:36px;display:flex;align-items:center}
+.activity{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:grid;gap:16px;min-width:0}
+.activity-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.activity-head .t{display:grid;gap:4px;min-width:0;flex:1 1 300px}
+.status{font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.status.done{background:var(--ok-soft);color:var(--ok)}
+
+/* Quiz */
+.q{display:grid;gap:14px}
+.q-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;font-size:.88rem;color:var(--muted)}
+.q-text{font-size:1.12rem;font-weight:500}
+.opts{display:grid;gap:10px;border:0;padding:0;margin:0}
+.opt{position:relative}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt label{display:flex;gap:12px;align-items:center;min-height:52px;padding:12px 16px;border:2px solid var(--line);border-radius:12px;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s}
+.opt label .key{flex:0 0 30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-weight:700;font-size:.85rem}
+.opt label:hover{border-color:var(--blue)}
+.opt input:checked + label{border-color:var(--blue);background:var(--blue-soft)}
+.opt input:checked + label .key{background:var(--blue);color:var(--blue-ink)}
+.opt input:focus-visible + label{outline:3px solid var(--yellow);outline-offset:2px}
+.opt.right label{border-color:var(--ok);background:var(--ok-soft)}
+.opt.right label .key{background:var(--ok);color:var(--surface)}
+.opt.wrong label{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong label .key{background:var(--bad);color:var(--surface)}
+.opts.locked label{cursor:default}
+.fb{border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+.fb.ok{background:var(--ok-soft)} .fb.bad{background:var(--bad-soft)} .fb.info{background:var(--blue-soft)}
+.fb .fb-t{font-weight:700;font-family:var(--font-display);font-size:1.05rem}
+.fb.ok .fb-t{color:var(--ok)} .fb.bad .fb-t{color:var(--bad)}
+.hint{background:var(--yellow-soft);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:.95rem}
+.hint svg{width:22px;height:22px;margin-top:2px}
+.progress-q{height:6px;background:var(--surface-2);border-radius:999px;overflow:hidden}
+.progress-q i{display:block;height:100%;background:var(--yellow)}
+.result-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.result-list li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;font-size:.95rem}
+.mark{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.85rem}
+.mark.ok{background:var(--ok-soft);color:var(--ok)} .mark.bad{background:var(--bad-soft);color:var(--bad)} .mark.na{background:var(--surface-2);color:var(--muted)}
+.score-big{font-family:var(--font-display);font-weight:800;font-size:2.6rem;line-height:1}
+
+/* Forms */
+label.fl{font-weight:600;font-size:.95rem;display:block;margin-bottom:6px}
+.inp,textarea,select{font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:10px 12px;min-height:48px;width:100%}
+textarea{min-height:96px;resize:vertical}
+.inp:focus,textarea:focus,select:focus{border-color:var(--blue);outline:none}
+.num-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.num-row .inp{max-width:200px}
+.unit{font-family:var(--font-mono);font-weight:500}
+.field{display:grid;gap:6px}
+.help{font-size:.85rem;color:var(--muted)}
+
+/* Classify */
+.cls{display:grid;gap:10px}
+.cls-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--surface)}
+.cls-item.right{border-color:var(--ok);background:var(--ok-soft)} .cls-item.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.cls-item .lbl{display:flex;gap:10px;align-items:center;font-weight:500;min-width:0}
+.cls-item .why{grid-column:1/-1;font-size:.9rem}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.seg button{appearance:none;font:inherit;font-size:.88rem;font-weight:600;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;min-height:40px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--blue);color:var(--blue-ink);border-color:var(--blue)}
+@media (max-width:620px){.cls-item{grid-template-columns:1fr}}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:600;font-size:.85rem}
+td .inp,td select{min-height:42px;padding:6px 10px;min-width:110px}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* Sims */
+.sim{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.sim{grid-template-columns:1fr}}
+.sim-stage{background:var(--sky);border-radius:var(--r);overflow:hidden}
+.sim-stage svg{width:100%;height:auto;display:block}
+.slider{display:grid;gap:4px}
+.slider .top{display:flex;justify-content:space-between;font-weight:600;font-size:.93rem}
+input[type=range]{width:100%;accent-color:var(--blue);min-height:36px}
+@media (prefers-reduced-motion:no-preference){.jet{stroke-dasharray:6 6;animation:flow .6s linear infinite}}
+@keyframes flow{to{stroke-dashoffset:-12}}
+
+/* Badges */
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.badge{display:grid;justify-items:center;gap:6px;text-align:center;padding:14px 8px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.badge svg{width:64px;height:64px}
+.badge.locked{opacity:.5}
+.badge.locked svg{filter:grayscale(1)}
+.badge b{font-size:.9rem}
+.badge span{font-size:.75rem;color:var(--muted)}
+
+/* Levels */
+.level-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.level-tabs button{appearance:none;font:inherit;font-weight:600;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:10px 16px;min-height:52px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.level-tabs button[aria-selected="true"]{border-color:var(--blue);background:var(--blue-soft)}
+.level-tabs .lv{font-size:.75rem;color:var(--muted);display:block;font-weight:500}
+
+/* Stats */
+.stat{display:grid;gap:4px;padding:18px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.stat .n{font-family:var(--font-display);font-weight:800;font-size:2rem;line-height:1}
+.stat .l{font-size:.88rem;color:var(--muted)}
+
+/* Community */
+.notice{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:14px 16px;border-radius:12px;background:var(--blue-soft);font-size:.95rem}
+.notice.warn{background:var(--yellow-soft)}
+.notice svg{width:24px;height:24px;margin-top:1px}
+.post{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:10px;min-width:0}
+.post .who{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--green-soft);color:var(--green);flex-shrink:0}
+.post .body{overflow-wrap:anywhere;white-space:pre-wrap}
+.comments{display:grid;gap:8px;border-left:3px solid var(--line);padding-left:12px;margin-left:4px}
+.comment{font-size:.93rem;overflow-wrap:anywhere}
+.comment b{font-weight:600}
+.tag-demo{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--muted)}
+.tag-local{background:var(--yellow-soft);color:var(--ink)}
+.checks{display:grid;gap:6px}
+.checks label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;min-height:36px}
+.checks input{width:22px;height:22px;margin-top:2px;accent-color:var(--green);flex-shrink:0}
+
+/* Project template */
+.steps{display:grid;gap:14px;counter-reset:st}
+.step{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start}
+.step::before{counter-increment:st;content:counter(st);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--green);color:var(--green-ink);font-weight:800;font-family:var(--font-display)}
+.step > div{display:grid;gap:6px;min-width:0}
+
+/* About */
+.theory{display:grid;gap:8px}
+.theory .who{font-family:var(--font-display);font-weight:800;font-size:1.1rem}
+.refs{display:grid;gap:10px;padding-left:0;list-style:none;margin:0}
+.refs li{padding-left:2em;text-indent:-2em;font-size:.93rem;overflow-wrap:anywhere}
+.prose{display:grid;gap:12px;max-width:72ch}
+
+/* Toast / modal */
+.toast-wrap{pointer-events:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:80;display:grid;gap:8px;width:min(92vw,440px)}
+.toast{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;box-shadow:var(--shadow);display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;font-size:.95rem}
+.toast svg{width:40px;height:auto}
+@media (prefers-reduced-motion:no-preference){.toast{animation:pop .25s ease}}
+@keyframes pop{from{transform:translateY(10px);opacity:0}}
+.overlay{position:fixed;inset:0;background:rgba(10,20,16,.55);z-index:90;display:grid;place-items:center;padding:16px}
+.modal{background:var(--surface);border-radius:var(--r);padding:22px;width:min(100%,640px);max-height:86vh;overflow:auto;display:grid;gap:14px}
+.modal textarea{min-height:260px;font-family:var(--font-mono);font-size:.82rem}
+
+
+.view,.stack,.section,.activity,.card,.panel,.q,.post,.modal,.concept,.step > div,.mod-body,.hero-copy{grid-template-columns:minmax(0,1fr)}
+h1[tabindex="-1"]:focus,main:focus{outline:none}
+footer.foot{border-top:1px solid var(--line);margin-top:24px}
+footer.foot .in{max-width:1180px;margin:0 auto;padding:24px 16px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style></head><body>
+<a class="skip" href="#inicio" id="skipLink">Saltar al contenido</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="#inicio" aria-label="ExploraFísica, ir al inicio">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" class="f-blue"/>
+        <path d="M6 26 Q14 18 20 24 T34 22 L34 30 Q28 38 20 38 Q10 38 6 30Z" class="f-green"/>
+        <ellipse cx="20" cy="20" rx="15" ry="6" fill="none" class="s-yellow" stroke-width="2.4" transform="rotate(-25 20 20)"/>
+        <circle cx="31" cy="13" r="3.2" class="f-yellow"/>
+      </svg>
+      <span><span class="brand-name">Explora<b>Física</b></span><span class="brand-tag">Descubre, experimenta y aprende</span></span>
+    </a>
+    <span class="net" id="net" role="status" aria-live="polite">En línea</span>
+    <button class="icon-btn menu-btn" id="menuBtn" aria-expanded="false" aria-controls="nav">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" class="s-ink" stroke-width="2" stroke-linecap="round"/></svg>
+      Menú
+    </button>
+    <nav class="nav" id="nav" aria-label="Navegación principal">
+      <a href="#inicio">Inicio</a>
+      <a href="#modulos">Explora los módulos</a>
+      <a href="#laboratorio">Laboratorio</a>
+      <a href="#retos">Retos</a>
+      <a href="#comunidad">Comunidad</a>
+      <a href="#progreso">Mi progreso</a>
+      <a href="#acerca">Propósito</a>
+    </nav>
+  </div>
+</header>
+<main id="app" tabindex="-1"></main>
+<footer class="foot">
+  <div class="in">
+    <span>ExploraFísica · OVA de Física para secundaria rural de Colombia</span>
+    <span>Tu progreso se guarda solo en este navegador. No se piden datos personales.</span>
+  </div>
+</footer>
+<div class="toast-wrap" id="toasts" aria-live="polite"></div>
+<script>
+/* ================= DATOS PEDAGÓGICOS ================= */
+const TOPICS = {
+  movimiento:{label:"Movimiento", mod:"m1", tip:"El movimiento siempre se describe desde un punto de referencia. Rapidez = distancia ÷ tiempo.", ex:"Si una mula recorre 6 km en 2 h, su rapidez media es 3 km/h."},
+  fuerza:{label:"Fuerza", mod:"m2", tip:"Una fuerza es un empujón o un tirón. Puede cambiar el movimiento de un cuerpo o deformarlo.", ex:"Patear un balón cambia su movimiento; apretar barro lo deforma."},
+  presion:{label:"Presión", mod:"m2", tip:"Presión = fuerza ÷ área. En los líquidos, la presión aumenta con la profundidad.", ex:"El machete afilado corta mejor: la fuerza se concentra en un área muy pequeña."},
+  luz:{label:"Luz", mod:"m3", tip:"La luz viaja en línea recta, rebota en los espejos (reflexión) y se desvía al cambiar de medio (refracción).", ex:"Un palo metido en la quebrada parece quebrado por la refracción."},
+  energia:{label:"Energía", mod:"m3", tip:"La energía se transforma: un panel solar convierte la energía de la luz en energía eléctrica.", ex:"El sol seca el café porque su luz se transforma en calor."}
+};
+
+const DIAG = [
+  {topic:"movimiento", q:"Un bus sale de la vereda y recorre 30 km en 1 hora. ¿Qué rapidez media lleva?", opts:["1 km/h","30 km/h","31 km/h","60 km/h"], a:1},
+  {topic:"fuerza", q:"¿Qué efecto puede producir una fuerza sobre un cuerpo?", opts:["Solo cambiarle el color","Cambiar su movimiento o deformarlo","Solo hacerlo más pesado","Ninguno: las fuerzas no tienen efectos"], a:1},
+  {topic:"presion", q:"Caminando por un potrero con barro, ¿con qué calzado se hunde menos una persona?", opts:["Botas de suela ancha","Zapatos de tacón","Descalza, en puntas de pie","Se hunde igual con todos"], a:0},
+  {topic:"luz", q:"¿Por qué puedes ver tu reflejo en un espejo?", opts:["Porque el espejo produce su propia luz","Porque la luz rebota en el espejo y llega a tus ojos","Porque la luz atraviesa el espejo","Porque el espejo guarda tu sombra"], a:1},
+  {topic:"energia", q:"Un panel solar instalado en la escuela rural transforma…", opts:["La energía de la luz en energía eléctrica","El agua en luz","La electricidad en viento","El sonido en calor"], a:0}
+];
+
+/* q: pregunta, opts, a: índice correcto, why: explicación, fb: retroalimentación por opción (opcional), hint */
+const QUIZZES = {
+  "m1-quiz":{title:"Cuestionario: el movimiento", mod:"m1", qs:[
+    {topic:"movimiento", q:"Una mula carga café y camina 4 km en 2 horas. ¿Cuál es su rapidez media?", opts:["8 km/h","2 km/h","0,5 km/h","6 km/h"], a:1,
+     fb:["Multiplicaste 4 × 2. La rapidez es distancia ÷ tiempo.",null,"Dividiste el tiempo entre la distancia; es al revés.","Sumaste los datos. Usa la fórmula v = d ÷ t."],
+     why:"v = d ÷ t = 4 km ÷ 2 h = 2 km/h.", hint:"Divide los kilómetros entre las horas."},
+    {topic:"movimiento", q:"Sofía camina 300 m hasta el acueducto veredal y regresa a su casa por el mismo camino. ¿Cuál es su desplazamiento total?", opts:["600 m","300 m","0 m","150 m"], a:2,
+     fb:["600 m es la distancia recorrida, no el desplazamiento.","Ese sería el desplazamiento solo de ida.",null,"No hay razón para dividir entre dos."],
+     why:"Terminó donde empezó: el cambio de posición es 0 m, aunque recorrió 600 m de distancia.", hint:"El desplazamiento compara solo el punto de inicio con el punto final."},
+    {topic:"movimiento", q:"¿Cuál de estas situaciones muestra aceleración?", opts:["Un carro a 40 km/h constantes en una recta","Un mango que cae del árbol cada vez más rápido","Una piedra quieta en el camino","Una casa de la finca"], a:1,
+     fb:["Si la velocidad no cambia, no hay aceleración.",null,"Está en reposo: su velocidad no cambia.","Está en reposo respecto al suelo."],
+     why:"La aceleración es el cambio de velocidad. El mango gana velocidad al caer (unos 9,8 m/s cada segundo).", hint:"Busca algo cuya velocidad cambie."},
+    {topic:"movimiento", q:"Vas sentado en la chiva. Tu compañero va sentado a tu lado. Respecto a ti, tu compañero está…", opts:["En movimiento","En reposo","Siempre acelerando","No se puede saber"], a:1,
+     fb:["Respecto a la carretera sí se mueve, pero la pregunta es respecto a ti.",null,"No cambia su posición respecto a ti.","Sí se puede: depende del punto de referencia."],
+     why:"No cambia de posición respecto a ti, así que para ti está en reposo. Para alguien en la carretera, se mueve.", hint:"¿Cambia tu compañero de lugar respecto a ti?"}
+  ]},
+  "m2-situaciones":{title:"Situaciones con herramientas y recipientes", mod:"m2", qs:[
+    {topic:"presion", q:"¿Por qué conviene afilar el machete antes de cortar caña?", opts:["Para que pese menos","Para reducir el área del filo y aumentar la presión","Para aumentar la fuerza del brazo","Para que brille"], a:1,
+     fb:["Afilar casi no cambia el peso.",null,"Tu fuerza es la misma; lo que cambia es el área.","El brillo no influye en el corte."],
+     why:"P = F ÷ A. Con la misma fuerza y menos área, la presión es mayor y el machete corta mejor.", hint:"Piensa en la fórmula P = F ÷ A."},
+    {topic:"presion", q:"Una caneca con agua tiene dos orificios iguales: uno cerca del fondo y otro cerca de la superficie. ¿Por cuál sale el agua con más fuerza?", opts:["Por el de arriba","Por el de abajo","Por los dos igual","Depende del color de la caneca"], a:1,
+     fb:["Arriba hay poca agua encima, así que la presión es menor.",null,"La presión cambia con la profundidad.","El color no influye en la presión."],
+     why:"La presión hidrostática aumenta con la profundidad (P = ρ·g·h). Abajo hay más agua encima empujando.", hint:"¿Dónde hay más agua por encima del orificio?"},
+    {topic:"presion", q:"Después de bombear una fumigadora de espalda, el líquido sale con fuerza por la boquilla. ¿Por qué?", opts:["El aire comprimido aumenta la presión dentro del tanque","El líquido se calienta al bombear","Solo por la gravedad","La boquilla chupa el líquido"], a:0,
+     fb:[null,"El cambio de temperatura es mínimo.","La gravedad no explica que salga hacia arriba o de lado.","La boquilla no succiona: el líquido es empujado."],
+     why:"Al bombear, metes más aire en el mismo espacio: aumenta la presión y esa presión empuja el líquido hacia afuera.", hint:"¿Qué pasa con el aire dentro del tanque cuando bombeas?"},
+    {topic:"presion", q:"Dos tanques de 1 m de alto, llenos de agua: uno es ancho y el otro delgado. ¿En el fondo de cuál hay más presión?", opts:["En el ancho","En el delgado","En los dos es igual","En ninguno hay presión"], a:2,
+     fb:["El ancho tiene más agua, pero la presión no depende del ancho.","La forma no cambia la presión en el fondo.",null,"Todo líquido ejerce presión sobre el fondo."],
+     why:"La presión hidrostática depende de la profundidad y del líquido, no de la forma ni del ancho del recipiente.", hint:"Mira la fórmula P = ρ·g·h: ¿aparece el ancho?"}
+  ]},
+  "m3-analiza":{title:"Espejos, agua y sombras", mod:"m3", qs:[
+    {topic:"luz", q:"Un palo metido en la quebrada parece quebrado. ¿Qué fenómeno lo explica?", opts:["Reflexión","Refracción","El agua dobla el palo","La sombra del palo"], a:1,
+     fb:["La reflexión es el rebote de la luz, como en un espejo.",null,"El palo sigue recto; solo lo vemos distinto.","La sombra no cambia la forma que vemos del palo."],
+     why:"La luz cambia de dirección al pasar del agua al aire. Por eso vemos la parte sumergida en otro lugar.", hint:"La luz pasa de un medio (agua) a otro (aire)."},
+    {topic:"luz", q:"A las 5 de la tarde tu sombra es mucho más larga que al mediodía. ¿Por qué?", opts:["El sol está más bajo y la luz llega más inclinada","Creciste durante el día","La luz se cansa en la tarde","La sombra crece con el calor"], a:0,
+     fb:[null,"Tu estatura no cambia en un día.","La luz no se cansa.","El calor no cambia el tamaño de la sombra."],
+     why:"La luz viaja en línea recta. Con el sol bajo, los rayos llegan inclinados y la zona bloqueada por tu cuerpo es más larga.", hint:"Dibuja rayos rectos que llegan casi horizontales."},
+    {topic:"luz", q:"En el agua quieta del jagüey ves los árboles al revés. ¿Qué fenómeno es?", opts:["Refracción","Reflexión","Absorción","Dispersión"], a:1,
+     fb:["La refracción ocurre cuando la luz entra al agua; aquí la luz rebota.",null,"Si se absorbiera, no veríamos imagen.","La dispersión separa colores, como en el arcoíris."],
+     why:"La superficie quieta del agua funciona como un espejo: la luz rebota y forma una imagen invertida.", hint:"¿La luz entra al agua o rebota en ella?"},
+    {topic:"luz", q:"Un pescador ve un pez en el río. Para atraparlo con una red de mano, debe apuntar…", opts:["Justo donde lo ve","Un poco más abajo de donde lo ve","Más arriba de donde lo ve","Hacia el reflejo del cielo"], a:1,
+     fb:["Por la refracción, el pez no está donde parece.",null,"El pez parece estar más arriba de lo que está, no más abajo.","El reflejo no indica dónde está el pez."],
+     why:"La refracción hace que el pez parezca más cerca de la superficie. Su posición real está un poco más abajo.", hint:"Recuerda el palo que parece quebrado: la parte sumergida parece más arriba."}
+  ]},
+  "m3-quiz":{title:"Cuestionario: la luz", mod:"m3", qs:[
+    {topic:"luz", q:"¿Cuál de estos NO es una fuente de luz propia?", opts:["El Sol","Una luciérnaga","La Luna","Una vela encendida"], a:2,
+     fb:["El Sol produce su propia luz.","La luciérnaga produce luz (bioluminiscencia).",null,"La llama produce luz."],
+     why:"La Luna no produce luz: refleja la luz del Sol.", hint:"¿Cuál solo refleja la luz que recibe?"},
+    {topic:"luz", q:"Un rayo llega a un espejo formando 30° con la normal. ¿Con qué ángulo se refleja?", opts:["30°","60°","90°","0°"], a:0,
+     fb:[null,"60° sería el ángulo con el espejo, no con la normal.","Eso significaría rebotar pegado al espejo.","Solo pasa si el rayo llega perpendicular."],
+     why:"Ley de la reflexión: el ángulo de incidencia es igual al ángulo de reflexión.", hint:"En la reflexión, los dos ángulos son iguales."},
+    {topic:"luz", q:"¿Cuál material es translúcido?", opts:["Vidrio limpio de ventana","Papel mantequilla","Tabla de madera","Pared de adobe"], a:1,
+     fb:["El vidrio limpio es transparente: se ve claramente a través.",null,"La madera es opaca.","El adobe es opaco."],
+     why:"Translúcido: deja pasar la luz pero no se ve con claridad a través de él.", hint:"Deja pasar luz, pero las cosas se ven borrosas."},
+    {topic:"luz", q:"¿Por qué se forman las sombras?", opts:["Porque la luz viaja en línea recta y un objeto opaco la bloquea","Porque los objetos producen oscuridad","Porque la luz se dobla alrededor de los objetos","Porque el suelo absorbe el color"], a:0,
+     fb:[null,"La oscuridad es ausencia de luz, no algo que se produce.","Si se doblara alrededor, no habría sombras nítidas.","La sombra existe aunque el suelo sea claro."],
+     why:"La luz no puede rodear al objeto opaco: detrás queda una zona sin luz.", hint:"Recuerda cómo viaja la luz."}
+  ]},
+  "lab-quiz":{title:"Comprueba lo que entendiste", mod:"lab", qs:[
+    {topic:"presion", q:"Si llenas más la botella, ¿qué pasa con la velocidad de salida en el orificio de abajo?", opts:["Aumenta","Disminuye","No cambia","El agua deja de salir"], a:0,
+     fb:[null,"Al haber más agua encima, la presión crece, no baja.","La profundidad del orificio cambió: hay más agua encima.","Con más agua hay más presión, no menos."],
+     why:"Más agua encima del orificio significa más profundidad, más presión y mayor velocidad de salida.", hint:"¿Cambia la profundidad del orificio respecto a la superficie del agua?"},
+    {topic:"presion", q:"A medida que la botella se vacía, los chorros…", opts:["Llegan cada vez más lejos","Se acortan poco a poco","Se mantienen iguales","Cambian de orden"], a:1,
+     fb:["El nivel baja y con él la presión.",null,"La presión depende del nivel del agua, que va bajando.","El de abajo sigue saliendo más rápido mientras haya agua encima."],
+     why:"El nivel baja, la profundidad de cada orificio disminuye y la presión también.", hint:"Observa qué pasa con el nivel del agua."}
+  ]}
+};
+
+const MODULES = {
+  m1:{
+    n:1, title:"El movimiento a nuestro alrededor", short:"Movimiento", level:"Básico", tone:"blue",
+    desc:"Descubre cómo describir el movimiento de la chiva, el río o un mango que cae.",
+    goals:["Diferenciar movimiento y reposo según un punto de referencia","Distinguir distancia y desplazamiento","Calcular rapidez y reconocer la aceleración"],
+    fisi:"Mira a tu alrededor: el río, el viento en el platanal, la moto del vecino. Todo eso es movimiento. Vamos a medirlo.",
+    concepts:[
+      {t:"Movimiento y reposo", d:"Un cuerpo se mueve si cambia de posición respecto a un punto de referencia.", ex:"Para ti, que vas en la chiva, tu maleta está en reposo. Para alguien en la carretera, se mueve.", alt:"El punto de referencia es el «desde dónde miro». Cambia el punto y puede cambiar la respuesta."},
+      {t:"Distancia y desplazamiento", d:"Distancia: todo el camino recorrido. Desplazamiento: el cambio de posición en línea recta, con dirección.", ex:"Vas de la casa al potrero (500 m) y regresas: distancia 1000 m, desplazamiento 0 m.", alt:"svg:path"},
+      {t:"Rapidez y velocidad", d:"Rapidez: qué tan rápido te mueves. Velocidad: la rapidez más la dirección.", f:"v = d ÷ t", ex:"Un caballo recorre 12 km en 2 h: su rapidez media es 6 km/h.", alt:"Para pasar de km/h a m/s, divide entre 3,6. Ejemplo: 36 km/h = 10 m/s."},
+      {t:"Aceleración", d:"Es el cambio de velocidad en cada unidad de tiempo.", f:"a = Δv ÷ Δt", ex:"Una moto pasa de 0 a 10 m/s en 5 s: a = 2 m/s².", alt:"Frenar también es acelerar: la aceleración es negativa porque la velocidad disminuye."},
+      {t:"Movimiento en el entorno rural", d:"El campo está lleno de movimientos para observar y medir.", ex:"El agua del río, una mula con carga, un mango que cae (gana unos 9,8 m/s cada segundo).", alt:"Reto rápido: cronometra cuánto tarda una hoja en recorrer 5 m en la quebrada y calcula su rapidez."}
+    ],
+    activities:[["m1-identifica","Identificar objetos en movimiento"],["m1-problema","Resolver un problema de velocidad"],["m1-quiz","Cuestionario de selección múltiple"],["m1-observa","Observación en el entorno"]]
+  },
+  m2:{
+    n:2, title:"Fuerzas y presión en la vida cotidiana", short:"Fuerzas y presión", level:"Intermedio", tone:"green",
+    desc:"Entiende por qué funciona el machete afilado, el tanque elevado o el gato hidráulico.",
+    goals:["Reconocer las fuerzas y sus efectos","Calcular presión con P = F ÷ A","Explicar la presión hidrostática y el principio de Pascal con ejemplos del campo y el hogar"],
+    fisi:"Las herramientas de la finca esconden mucha Física. Descubramos por qué unas facilitan el trabajo.",
+    concepts:[
+      {t:"Concepto de fuerza", d:"Una fuerza es un empujón o un tirón entre dos cuerpos. Se mide en newtons (N).", ex:"Halar el lazo de una vaca, empujar una carretilla con plátano.", alt:"1 N es más o menos el peso de una mandarina pequeña (unos 100 g)."},
+      {t:"Efectos de las fuerzas", d:"Una fuerza puede iniciar, frenar o desviar un movimiento, o deformar un cuerpo.", ex:"Patear un balón cambia su movimiento. Apretar barro para hacer adobe lo deforma.", alt:"Si empujas una pared, no se mueve, pero sí ejerces fuerza: la pared también te empuja a ti."},
+      {t:"Presión", d:"La presión indica cómo se reparte una fuerza sobre un área. Se mide en pascales (Pa = N/m²).", f:"P = F ÷ A", ex:"El machete afilado corta mejor porque su filo tiene un área muy pequeña.", alt:"Las botas anchas reparten tu peso en más área: hay menos presión y te hundes menos en el barro."},
+      {t:"Presión hidrostática", d:"Es la presión dentro de un líquido. Aumenta con la profundidad.", f:"P = ρ · g · h", ex:"Entre más alto esté el tanque, con más presión sale el agua de la llave.", alt:"Cada 10 m de profundidad en agua añaden cerca de 100 000 Pa, aproximadamente la presión de la atmósfera."},
+      {t:"Principio de Pascal", d:"La presión aplicada a un líquido encerrado se transmite igual a todo el líquido.", f:"F₂ = F₁ · A₂ ÷ A₁", ex:"El gato hidráulico levanta una camioneta con poca fuerza. Así funcionan los frenos de la moto.", alt:"Un pistón pequeño empuja; uno grande recibe la misma presión en más área, y por eso la fuerza se multiplica."}
+    ],
+    activities:[["m2-situaciones","Explorar herramientas y recipientes"],["m2-experimento","Experimentar con la presión del agua"],["m2-ejercicios","Ejercicios con datos numéricos"],["m2-aplicaciones","Física en el campo y el hogar"]]
+  },
+  m3:{
+    n:3, title:"La luz y sus fenómenos", short:"Luz", level:"Intermedio", tone:"yellow",
+    desc:"Explora sombras, reflejos en el jagüey y el palo que parece quebrado en la quebrada.",
+    goals:["Clasificar fuentes de luz naturales y artificiales","Explicar la propagación rectilínea de la luz","Diferenciar reflexión y refracción con ejemplos cotidianos"],
+    fisi:"Sin luz no veríamos nada. Hoy vas a predecir hacia dónde viaja un rayo de luz.",
+    concepts:[
+      {t:"Fuentes naturales y artificiales", d:"Natural: Sol, rayo, luciérnaga. Artificial: bombillo, vela, linterna.", ex:"La Luna no es fuente de luz: refleja la luz del Sol.", alt:"Pregunta clave: ¿el objeto produce luz o solo la devuelve?"},
+      {t:"Propagación de la luz", d:"La luz viaja en línea recta y muy rápido: unos 300 000 km cada segundo.", ex:"Los rayos de sol que entran entre las hojas del bosque forman líneas rectas.", alt:"Por eso existen las sombras: un objeto opaco bloquea los rayos rectos."},
+      {t:"Reflexión", d:"La luz rebota en una superficie. El ángulo de incidencia es igual al de reflexión.", f:"θᵢ = θᵣ", ex:"Ves los árboles reflejados en el agua quieta del jagüey.", alt:"Como una pelota que rebota en el piso: entra inclinada y sale con la misma inclinación."},
+      {t:"Refracción", d:"La luz cambia de dirección al pasar de un medio a otro porque cambia su rapidez.", ex:"Un palo metido en la quebrada parece quebrado.", alt:"Imagina una carretilla que pasa del pavimento al barro: la rueda que entra primero se frena y la carretilla gira."},
+      {t:"La luz y los materiales", d:"Transparentes dejan pasar la luz. Translúcidos la dejan pasar difusa. Opacos la bloquean.", ex:"Vidrio (transparente), plástico del invernadero (translúcido), pared de adobe (opaco).", alt:"Prueba con una linterna: ¿qué materiales de tu casa dejan pasar la luz?"}
+    ],
+    activities:[["m3-clasifica","Clasificar fuentes luminosas"],["m3-explora","Explorar el comportamiento de la luz"],["m3-analiza","Analizar espejos, agua y sombras"],["m3-quiz","Cuestionario interactivo"]]
+  },
+  m4:{
+    n:4, title:"Reto científico colaborativo", short:"Reto colaborativo", level:"Avanzado", tone:"green",
+    desc:"¿Cómo podemos usar la Física para comprender o solucionar un problema de nuestra comunidad?",
+    goals:["Formular una pregunta de investigación y una hipótesis","Diseñar un experimento sencillo y registrar datos","Construir y compartir una conclusión en equipo"],
+    fisi:"Ahora los científicos son ustedes. Elijan un problema real de su vereda y investíguenlo en equipo.",
+    concepts:[],
+    activities:[["m4-proyecto","Completar la plantilla del proyecto"],["m4-comparte","Compartir el trabajo con compañeros"]]
+  }
+};
+
+const CLASSIFY = {
+  "m1-identifica":{cats:["Se mueve","En reposo"], intro:"Punto de referencia: el suelo. Toca la opción correcta para cada objeto.", items:[
+    {l:"Tractor arando el terreno", a:0, why:"Cambia de posición respecto al suelo."},
+    {l:"Vaca echada descansando", a:1, why:"No cambia de lugar respecto al suelo."},
+    {l:"Agua del río", a:0, why:"El agua avanza río abajo."},
+    {l:"Moto parqueada frente a la tienda", a:1, why:"Está detenida respecto al suelo."},
+    {l:"Colibrí volando entre las flores", a:0, why:"Cambia de posición constantemente."},
+    {l:"Árbol de guayabo", a:1, why:"Sus ramas pueden moverse con el viento, pero el árbol no cambia de lugar."},
+    {l:"Hojas del platanal sacudidas por el viento", a:0, why:"Las hojas cambian de posición."},
+    {l:"Casa de la finca", a:1, why:"Respecto al suelo, no cambia de lugar."}
+  ]},
+  "m2-aplicaciones":{cats:["Presión (F ÷ A)","Presión hidrostática","Principio de Pascal"], intro:"¿Qué idea de Física explica cada situación?", items:[
+    {l:"Puntilla con punta para clavar madera", a:0, why:"La punta tiene área muy pequeña: mucha presión."},
+    {l:"Tanque elevado que abastece la casa", a:1, why:"La altura del agua genera presión en la llave."},
+    {l:"Gato hidráulico para levantar la camioneta", a:2, why:"Multiplica la fuerza transmitiendo presión en un líquido encerrado."},
+    {l:"Frenos hidráulicos de la moto", a:2, why:"El líquido de frenos transmite la presión del pedal a las pastillas."},
+    {l:"Botas anchas para caminar en el barro", a:0, why:"Más área reparte el peso: menos presión."},
+    {l:"Muro de represa más grueso en la base", a:1, why:"Abajo la presión del agua es mayor."},
+    {l:"Cuchillo afilado para pelar yuca", a:0, why:"El filo concentra la fuerza en poca área."},
+    {l:"Silla hidráulica de la peluquería del pueblo", a:2, why:"Usa el mismo principio del gato hidráulico."}
+  ]},
+  "m3-clasifica":{cats:["Natural","Artificial","No produce luz"], intro:"¿El objeto produce luz? ¿Es natural o hecho por personas?", items:[
+    {l:"El Sol", a:0, why:"Produce luz por reacciones nucleares."},
+    {l:"Luciérnaga", a:0, why:"Produce luz con reacciones químicas de su cuerpo."},
+    {l:"Vela encendida", a:1, why:"La fabricamos las personas; su llama produce luz."},
+    {l:"Bombillo LED", a:1, why:"Es una fuente artificial de luz."},
+    {l:"La Luna", a:2, why:"Solo refleja la luz del Sol."},
+    {l:"Espejo", a:2, why:"Refleja la luz, pero no la produce."},
+    {l:"Rayo de una tormenta", a:0, why:"Es una descarga eléctrica natural que produce luz."},
+    {l:"Linterna del celular", a:1, why:"Es una fuente artificial."}
+  ]}
+};
+
+const NUMERIC = {
+  "m1-v1":{topic:"movimiento", prompt:"Camilo va en bicicleta de su casa al colegio: recorre 6 km en 30 minutos. ¿Cuál es su rapidez media en km/h?", unit:"km/h", ans:12, tol:0.05,
+    traps:[{v:0.2,m:"Eso son kilómetros por minuto. Una hora tiene 60 minutos."},{v:180,m:"Multiplicaste. La rapidez es distancia ÷ tiempo."},{v:5,m:"Dividiste el tiempo entre la distancia. Es al revés."}],
+    hints:["Convierte el tiempo a horas: 30 min = 0,5 h.","Ahora usa v = d ÷ t = 6 km ÷ 0,5 h."], sol:"v = 6 km ÷ 0,5 h = 12 km/h"},
+  "m1-v2":{topic:"movimiento", prompt:"Reto extra: expresa esa misma rapidez (12 km/h) en metros por segundo.", unit:"m/s", ans:3.33, tol:0.06,
+    traps:[{v:43.2,m:"Multiplicaste por 3,6. Para pasar de km/h a m/s, se divide."}],
+    hints:["Para pasar de km/h a m/s, divide entre 3,6.","12 ÷ 3,6 = ?"], sol:"12 km/h ÷ 3,6 ≈ 3,33 m/s (12 000 m en 3600 s)"},
+  "m2-p1":{topic:"presion", prompt:"Un estudiante pesa 500 N y está de pie. Las suelas de sus dos botas suman 0,05 m². ¿Qué presión ejerce sobre el suelo?", unit:"Pa", ans:10000, tol:0.02,
+    traps:[{v:25,m:"Multiplicaste fuerza por área. La presión es fuerza ÷ área."},{v:0.0001,m:"Dividiste el área entre la fuerza. Es al revés."}],
+    hints:["Usa P = F ÷ A.","P = 500 N ÷ 0,05 m²."], sol:"P = 500 N ÷ 0,05 m² = 10 000 Pa"},
+  "m2-p2":{topic:"presion", prompt:"Un tanque de agua tiene 2 m de profundidad. ¿Cuál es la presión del agua en el fondo? Usa ρ = 1000 kg/m³ y g = 9,8 m/s².", unit:"Pa", ans:19600, tol:0.02,
+    alts:[{v:20000,m:"Usaste g = 10 m/s². Con g = 9,8 m/s² el resultado exacto es 19 600 Pa. ¡Buen razonamiento!"}],
+    traps:[{v:19.6,m:"Revisa: ρ es 1000 kg/m³, no 1."},{v:2000,m:"Te faltó multiplicar por g."}],
+    hints:["Usa P = ρ · g · h.","P = 1000 × 9,8 × 2."], sol:"P = 1000 kg/m³ × 9,8 m/s² × 2 m = 19 600 Pa"},
+  "m2-p3":{topic:"fuerza", prompt:"En un gato hidráulico aplicas 200 N sobre un pistón de 4 cm². El pistón grande mide 200 cm². ¿Qué fuerza obtienes?", unit:"N", ans:10000, tol:0.02,
+    traps:[{v:4,m:"Revisa el orden: F₂ = F₁ · A₂ ÷ A₁."},{v:50,m:"Dividiste la fuerza entre el área pequeña. Usa F₂ = F₁ · A₂ ÷ A₁."}],
+    hints:["Las áreas pueden quedar en cm² porque se dividen entre sí.","F₂ = 200 N × 200 ÷ 4."], sol:"F₂ = 200 N × (200 cm² ÷ 4 cm²) = 200 N × 50 = 10 000 N"}
+};
+
+/* Retos por niveles. type: mcq | num */
+const LEVELS = [
+  {id:"explorador", name:"Explorador", n:1, desc:"Aplica las ideas básicas a situaciones cercanas.", color:"green"},
+  {id:"investigador", name:"Investigador", n:2, desc:"Explica fenómenos y razona con datos.", color:"blue"},
+  {id:"cientifico", name:"Científico", n:3, desc:"Calcula, compara y diseña experimentos justos.", color:"yellow"}
+];
+const CHALLENGES = [
+  {id:"r1a", lvl:"explorador", topic:"movimiento", type:"num", prompt:"La chiva recorre 60 km entre la vereda y el pueblo en 2 horas. ¿Cuál es su rapidez media?", unit:"km/h", ans:30, tol:0.02,
+    traps:[{v:120,m:"Multiplicaste. La rapidez es d ÷ t."}], hints:["v = d ÷ t"], sol:"60 km ÷ 2 h = 30 km/h. En la carretera destapada la rapidez cambia, por eso hablamos de rapidez media."},
+  {id:"r1b", lvl:"explorador", topic:"presion", type:"mcq", q:"¿Por qué es más fácil clavar una puntilla por la punta que por la cabeza?", opts:["La punta pesa más","Con la punta, la fuerza se concentra en un área pequeña y la presión es mayor","La madera es más blanda por ese lado","La cabeza produce menos fuerza"], a:1,
+    hint:"La fuerza del martillo es la misma. ¿Qué cambia?", why:"P = F ÷ A: la misma fuerza en menos área produce más presión, y la madera cede."},
+  {id:"r1c", lvl:"explorador", topic:"luz", type:"mcq", q:"De noche, la Luna ilumina el camino. ¿Qué afirmación es correcta?", opts:["La Luna produce luz como el Sol","La Luna refleja la luz del Sol","La Luna refleja la luz de la Tierra únicamente","La Luna brilla por el calor de su superficie"], a:1,
+    hint:"¿Por qué la Luna tiene fases?", why:"La Luna refleja la luz solar. Sus fases muestran qué parte iluminada por el Sol vemos desde la Tierra."},
+  {id:"r2a", lvl:"investigador", topic:"presion", type:"mcq", q:"La familia quiere más presión en la ducha. ¿Qué cambio funcionaría mejor?", opts:["Usar un tanque más ancho a la misma altura","Subir el tanque a una base más alta","Pintar el tanque de negro","Usar una manguera más larga a la misma altura"], a:1,
+    hint:"Piensa en P = ρ · g · h. ¿Qué variable puedes aumentar?", why:"La presión depende de la altura de la columna de agua. Subir el tanque aumenta h y la presión en la ducha."},
+  {id:"r2b", lvl:"investigador", topic:"movimiento", type:"mcq", q:"Ana camina 400 m al norte hasta la tienda y luego 300 m al este hasta la escuela. ¿Qué es correcto?", opts:["Distancia 700 m y desplazamiento 700 m","Distancia 700 m y desplazamiento 500 m","Distancia 500 m y desplazamiento 700 m","Distancia 100 m y desplazamiento 0 m"], a:1,
+    hint:"El desplazamiento es la línea recta entre inicio y final. Forma un triángulo rectángulo.", why:"Distancia = 400 + 300 = 700 m. Desplazamiento = √(400² + 300²) = 500 m (teorema de Pitágoras)."},
+  {id:"r2c", lvl:"investigador", topic:"luz", type:"mcq", q:"En el día, el interior de un aula con ventanas de vidrio sucio está más oscuro. ¿Cuál es la mejor explicación?", opts:["El vidrio sucio se vuelve translúcido y deja pasar menos luz","El vidrio sucio produce sombra propia","La luz no atraviesa nunca el vidrio","El polvo refleja toda la luz hacia adentro"], a:0,
+    hint:"Piensa en transparente, translúcido y opaco.", why:"La suciedad absorbe y dispersa parte de la luz: el vidrio deja pasar menos luz y de forma difusa."},
+  {id:"r3a", lvl:"cientifico", topic:"fuerza", type:"num", prompt:"Un gato hidráulico tiene un pistón pequeño de 2 cm² y uno grande de 100 cm². Si aplicas 150 N, ¿qué fuerza obtienes en el pistón grande?", unit:"N", ans:7500, tol:0.02,
+    traps:[{v:3,m:"Revisa la fórmula: F₂ = F₁ · A₂ ÷ A₁."}], hints:["La relación de áreas es 100 ÷ 2 = 50.","F₂ = 150 N × 50."], sol:"F₂ = 150 N × (100 ÷ 2) = 7500 N"},
+  {id:"r3b", lvl:"cientifico", topic:"presion", type:"num", prompt:"¿Qué presión ejerce el agua a 5 m de profundidad en un aljibe? Usa ρ = 1000 kg/m³ y g = 9,8 m/s².", unit:"Pa", ans:49000, tol:0.02,
+    alts:[{v:50000,m:"Usaste g = 10 m/s². Con 9,8 m/s² da 49 000 Pa. ¡Buen razonamiento!"}], traps:[{v:5000,m:"Te faltó multiplicar por g."}], hints:["P = ρ · g · h"], sol:"P = 1000 × 9,8 × 5 = 49 000 Pa"},
+  {id:"r3c", lvl:"cientifico", topic:"presion", type:"mcq", q:"Quieres saber si la altura del orificio en una botella cambia el alcance del chorro. ¿Cuál experimento es justo?", opts:["Usar botellas de distinto tamaño y distinto nivel de agua","Mantener igual la botella, el tamaño de los orificios y el nivel inicial del agua; cambiar solo la altura del orificio","Cambiar todo a la vez para ahorrar tiempo","Hacer una sola prueba y anotar el resultado"], a:1,
+    hint:"En un experimento justo se cambia una sola variable.", why:"Cambiar una sola variable (la altura del orificio) y controlar las demás permite saber qué causa el cambio. Repetir varias veces da datos más confiables."}
+];
+
+const BADGES = [
+  {id:"primer-paso", name:"Primer paso", desc:"Completa el diagnóstico", c:"blue", sym:"?"},
+  {id:"explorador", name:"Explorador", desc:"Supera el nivel 1", c:"green", sym:"1"},
+  {id:"investigador", name:"Investigador", desc:"Supera el nivel 2", c:"blue", sym:"2"},
+  {id:"cientifico", name:"Científico", desc:"Supera el nivel 3", c:"yellow", sym:"3"},
+  {id:"laboratorista", name:"Laboratorista", desc:"Completa el laboratorio", c:"green", sym:"L"},
+  {id:"sin-pistas", name:"Mente propia", desc:"Supera un nivel sin pistas", c:"yellow", sym:"★"},
+  {id:"proyecto", name:"Proyecto en marcha", desc:"Completa la plantilla del reto", c:"green", sym:"P"},
+  {id:"colaborador", name:"Colaborador", desc:"Haz un aporte en la comunidad", c:"blue", sym:"C"}
+];
+
+const MOTIVATION = ["Cada intento te acerca a la respuesta.","Equivocarse es parte de investigar.","Buen razonamiento. Sigue así.","Los científicos también revisan sus ideas.","Observa, piensa y vuelve a intentarlo."];
+
+const GUIDING = ["¿Qué aprendimos?","¿Qué descubrimos al experimentar?","¿En qué se parecen o diferencian nuestros resultados?","¿Cómo podemos aplicar este conocimiento en la comunidad?"];
+
+const DEMO_POSTS = [
+  {id:"d1", who:"Equipo Los Guaduales", q:1, text:"Hicimos el experimento de la botella con tres huecos. El chorro de abajo salió más rápido y llegó más lejos. Al principio pensábamos que el de arriba iba a llegar más lejos porque estaba más alto.", date:"Ejemplo",
+    comments:[{who:"Equipo Río Claro", text:"A nosotros nos pasó igual, pero cuando pusimos la botella sobre una mesa alta los resultados cambiaron un poco. ¿Midieron con regla?"},{who:"Docente (ejemplo)", text:"Buena pregunta. Comparen la altura de la mesa y el nivel del agua en ambos grupos."}]},
+  {id:"d2", who:"Equipo Cafetal", q:3, text:"En la vereda el agua llega con poca fuerza a las casas de arriba. Creemos que es porque el tanque está casi a la misma altura que esas casas. Queremos medir la altura con una manguera de nivel.", date:"Ejemplo",
+    comments:[{who:"Equipo Las Palmas", text:"Pueden usar la fórmula P = ρ·g·h para comparar la presión en cada casa."}]},
+  {id:"d3", who:"Equipo Arcoíris", q:0, text:"Aprendimos que la Luna no produce luz. Revisamos en el libro de ciencias y en una página de la NASA para confirmar antes de publicarlo.", date:"Ejemplo", comments:[]},
+  {id:"d4", who:"Equipo Quebrada Honda", q:2, text:"Nuestro palo en la quebrada parecía más quebrado cuando lo mirábamos de lado que desde arriba. El otro grupo dijo que se veía igual. ¿Será por el ángulo?", date:"Ejemplo",
+    comments:[{who:"Equipo Arcoíris", text:"En el simulador de luz del Módulo 3 se ve que la desviación cambia con el ángulo. ¡Prueben!"}]}
+];
+
+const IDEAS = [
+  "El agua llega con poca fuerza a las casas más altas de la vereda.",
+  "El café tarda mucho en secarse en temporada de lluvias.",
+  "El salón se calienta mucho al mediodía por el techo de zinc.",
+  "Cuesta mucho empujar la carretilla cargada en el barro."
+];
+
+const PROJECT_FIELDS = [
+  {k:"equipo", t:"Nombre del equipo", help:"Usen un nombre de equipo. No escriban nombres completos ni datos personales.", type:"input"},
+  {k:"problema", t:"Situación problemática", help:"¿Qué ocurre en la comunidad? Describan dónde y a quién afecta.", tip:"Elijan algo que puedan observar o medir."},
+  {k:"pregunta", t:"Pregunta de investigación", help:"Ejemplo: ¿Cómo influye la altura del tanque en la presión del agua en las casas?", tip:"Una buena pregunta relaciona dos variables."},
+  {k:"hipotesis", t:"Hipótesis", help:"Escríbanla así: Si…, entonces…, porque…", tip:"La hipótesis es una respuesta posible que vamos a poner a prueba."},
+  {k:"variables", t:"Variables", help:"Qué cambian, qué miden y qué mantienen igual.", tip:"Cambien una sola variable a la vez."},
+  {k:"materiales", t:"Materiales", help:"Prefieran materiales reciclados y seguros.", tip:"Botellas, manguera, regla, cronómetro del celular, linterna…"},
+  {k:"procedimiento", t:"Procedimiento", help:"Escriban los pasos en orden para que otro equipo pueda repetirlo.", tip:"Repitan cada medida al menos tres veces."},
+  {k:"datos", t:"Observaciones y datos", type:"table", help:"Registren lo que cambian y lo que miden en cada intento."},
+  {k:"resultados", t:"Resultados", help:"¿Qué patrón muestran los datos?", tip:"Comparen promedios, no un solo intento."},
+  {k:"conclusion", t:"Conclusión", help:"¿Se confirmó la hipótesis? ¿Qué aprendieron? ¿Qué mejorarían?", tip:"Está bien si la hipótesis no se confirma: también es un hallazgo."},
+  {k:"compartir", t:"¿Cómo lo compartirán?", help:"Cartelera, emisora comunitaria, reunión de padres, mural de la comunidad…", tip:"Piensen en quién puede usar lo que descubrieron."}
+];
+
+const REFS = [
+  "Ausubel, D. P., Novak, J. D., &amp; Hanesian, H. (1983). <i>Psicología educativa: Un punto de vista cognoscitivo</i> (2.ª ed.). Trillas.",
+  "Dewey, J. (2004). <i>Experiencia y educación</i> (J. Sáenz Obregón, Ed.). Biblioteca Nueva. (Obra original publicada en 1938)",
+  "Kolb, D. A. (1984). <i>Experiential learning: Experience as the source of learning and development</i>. Prentice Hall.",
+  "Lévy, P. (2004). <i>Inteligencia colectiva: Por una antropología del ciberespacio</i>. Organización Panamericana de la Salud. (Obra original publicada en 1994)",
+  "Lévy, P. (2007). <i>Cibercultura: Informe al Consejo de Europa</i>. Anthropos; Universidad Autónoma Metropolitana-Iztapalapa. (Obra original publicada en 1997)",
+  "Ministerio de Educación Nacional. (2004). <i>Estándares básicos de competencias en ciencias naturales y ciencias sociales. Formar en ciencias: ¡el desafío!</i> (Serie Guías N.º 7). MEN.",
+  "Ministerio de Educación Nacional. (2016). <i>Derechos básicos de aprendizaje: Ciencias naturales</i> (Vol. 1). MEN.",
+  "Piaget, J. (1970). <i>Genetic epistemology</i>. Columbia University Press.",
+  "PhET Interactive Simulations. (s.f.). <i>Bajo presión</i> [Simulación]. University of Colorado Boulder. https://phet.colorado.edu/es/simulations/under-pressure",
+  "PhET Interactive Simulations. (s.f.). <i>Doblando la luz</i> [Simulación]. University of Colorado Boulder. https://phet.colorado.edu/es/simulations/bending-light",
+  "Vygotski, L. S. (1979). <i>El desarrollo de los procesos psicológicos superiores</i>. Crítica."
+];
+
+const PHET = [
+  {t:"Bajo presión", d:"Presión en líquidos según profundidad y densidad.", u:"https://phet.colorado.edu/es/simulations/under-pressure"},
+  {t:"Doblando la luz", d:"Reflexión y refracción con distintos materiales.", u:"https://phet.colorado.edu/es/simulations/bending-light"},
+  {t:"Fuerzas y movimiento: fundamentos", d:"Fuerzas, rozamiento y movimiento.", u:"https://phet.colorado.edu/es/simulations/forces-and-motion-basics"}
+];
+/* ================= NÚCLEO: estado, utilidades ================= */
+const KEY = "explorafisica_v1";
+const fresh = () => ({diag:null, visited:{}, acts:{}, quizzes:{}, nums:{}, cls:{}, chal:{}, badges:{}, lab:{}, obs:{rows:[], note:""}, project:{rows:[]}, posts:[], comments:{}, likes:{}, sim:{}});
+let storageOK = true;
+let S = (() => {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return fresh();
+    return Object.assign(fresh(), JSON.parse(raw));
+  } catch (e) { storageOK = false; return fresh(); }
+})();
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); storageOK = true; } catch(e){ storageOK = false; } }
+
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => Array.from(el.querySelectorAll(s));
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (n, d=0) => Number(n).toLocaleString("es-CO", {maximumFractionDigits:d, minimumFractionDigits:0});
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const LETTERS = ["A","B","C","D","E"];
+
+function parseNum(str){
+  let s = String(str).trim().replace(/\s/g,"");
+  if (!s) return NaN;
+  if (s.includes(",")) s = s.replace(/\./g,"").replace(",",".");
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g,"");
+  return Number(s);
+}
+const near = (v, t, tol) => Math.abs(v - t) <= Math.max(Math.abs(t)*tol, 1e-9);
+
+/* ================= ILUSTRACIONES SVG ================= */
+function fisiSVG(label="Fisi, el explorador científico"){
+  return `<svg viewBox="0 0 100 110" role="img" aria-label="${esc(label)}">
+  <path d="M24 108 Q24 72 50 72 Q76 72 76 108 Z" class="f-blue"/>
+  <rect x="39" y="84" width="22" height="14" rx="3" class="f-green"/>
+  <circle cx="50" cy="91" r="2.4" class="f-yellow"/>
+  <circle cx="50" cy="48" r="22" class="f-skin"/>
+  <circle cx="38" cy="56" r="4" class="f-skin2" opacity=".35"/><circle cx="62" cy="56" r="4" class="f-skin2" opacity=".35"/>
+  <path d="M30 34 Q31 11 50 11 Q69 11 70 34Z" class="f-green"/>
+  <rect x="31" y="26" width="38" height="6" class="f-yellow"/>
+  <ellipse cx="50" cy="34" rx="31" ry="6.5" class="f-green"/>
+  <circle cx="42" cy="49" r="3.4" class="f-hair"/><circle cx="58" cy="49" r="3.4" class="f-hair"/>
+  <circle cx="43.2" cy="47.8" r="1.1" class="f-surface"/><circle cx="59.2" cy="47.8" r="1.1" class="f-surface"/>
+  <path d="M43 58 Q50 64 57 58" fill="none" class="s-hair" stroke-width="2.4" stroke-linecap="round"/>
+  <g class="wave"><path d="M70 84 L84 66" class="s-blue" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="88" cy="57" r="9" class="f-sky"/><circle cx="88" cy="57" r="9" fill="none" class="s-ink" stroke-width="3"/>
+  <path d="M84 54 Q86 52 89 52" fill="none" class="s-surface" stroke-width="1.6" stroke-linecap="round"/></g>
+</svg>`;
+}
+function fisiSay(title, text, compact=false){
+  return `<div class="fisi${compact?" compact":""}">${fisiSVG()}<div class="say"><strong>${title}</strong><p>${text}</p></div></div>`;
+}
+const ICON = {
+  bulb:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3Z" class="f-yellow"/><rect x="9" y="17" width="6" height="2.2" rx="1" class="f-ink"/><rect x="10" y="20" width="4" height="1.8" rx=".9" class="f-ink"/></svg>`,
+  info:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" class="f-blue"/><rect x="11" y="10" width="2" height="7" rx="1" class="f-surface"/><circle cx="12" cy="7" r="1.3" class="f-surface"/></svg>`,
+  warn:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 23 21H1Z" class="f-yellow"/><rect x="11" y="8" width="2" height="7" rx="1" class="f-ink"/><circle cx="12" cy="18" r="1.3" class="f-ink"/></svg>`,
+  globe:`<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" class="s-muted" stroke-width="2"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" class="s-muted" stroke-width="1.6"/></svg>`
+};
+function modIcon(id){
+  const m = {
+    m1:`<path d="M8 62 H72" class="s-muted" stroke-width="3" stroke-linecap="round"/><path d="M10 30 H30 M6 40 H28 M12 50 H30" class="s-blue" stroke-width="3.5" stroke-linecap="round" opacity=".55"/><circle cx="50" cy="40" r="16" class="f-blue"/><path d="M42 40 h16 m-6 -6 l6 6 -6 6" fill="none" class="s-surface" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+    m2:`<rect x="18" y="20" width="44" height="50" rx="6" class="f-blue-soft"/><rect x="18" y="38" width="44" height="32" rx="6" class="f-blue"/><path d="M40 6 V24 m-6 -6 l6 6 6 -6" fill="none" class="s-green" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 52 Q72 54 76 66 M62 62 Q68 64 70 72" fill="none" class="s-blue" stroke-width="3" stroke-linecap="round"/>`,
+    m3:`<circle cx="18" cy="18" r="9" class="f-yellow"/><path d="M24 24 L40 40" class="s-yellow" stroke-width="4" stroke-linecap="round"/><path d="M40 40 L48 70" class="s-yellow" stroke-width="4" stroke-linecap="round"/><path d="M40 40 L64 24" class="s-yellow" stroke-width="3" stroke-linecap="round" opacity=".6"/><rect x="8" y="40" width="64" height="32" rx="4" class="f-blue-soft" opacity=".85"/><path d="M8 40 H72" class="s-blue" stroke-width="3"/><path d="M40 40 L48 70" class="s-yellow" stroke-width="4" stroke-linecap="round"/>`,
+    m4:`<path d="M30 8 h20 M34 8 v18 L18 62 a6 6 0 0 0 6 10 h32 a6 6 0 0 0 6 -10 L46 26 V8" fill="none" class="s-green" stroke-width="4" stroke-linejoin="round"/><path d="M24 52 h32 l6 12 a4 4 0 0 1 -4 6 H22 a4 4 0 0 1 -4 -6Z" class="f-green"/><circle cx="36" cy="44" r="3" class="f-yellow"/><circle cx="44" cy="36" r="2.2" class="f-yellow"/>`
+  };
+  return `<svg viewBox="0 0 80 80" aria-hidden="true">${m[id]}</svg>`;
+}
+function heroSVG(){
+  return `<svg viewBox="0 0 560 420" role="img" aria-label="Ilustración: dos estudiantes observan fenómenos físicos en una vereda: un mango que cae, el chorro de un tanque de agua elevado y la luz del sol que se refleja en el río.">
+  <rect width="560" height="420" rx="24" class="f-sky"/>
+  <g class="s-yellow" stroke-width="4" stroke-linecap="round"><path d="M470 22v14M470 124v14M412 80h14M514 80h14M429 39l10 10M501 111l10 10M429 121l10-10M501 49l10-10"/></g>
+  <circle cx="470" cy="80" r="32" class="f-yellow"/>
+  <path d="M0 240 L80 172 L160 226 L250 150 L350 236 L440 184 L560 238 V420 H0Z" class="f-hill2"/>
+  <path d="M0 292 Q140 246 280 284 T560 274 V420 H0Z" class="f-hill"/>
+  <path d="M318 420 Q356 372 300 344 Q248 318 296 292 L324 292 Q286 318 342 342 Q404 372 372 420Z" class="f-blue-soft"/>
+  <path d="M446 100 L316 330 L246 236" fill="none" class="s-yellow" stroke-width="3" stroke-dasharray="8 6"/>
+  <rect x="226" y="208" width="66" height="22" rx="6" class="f-surface"/><text x="259" y="223" text-anchor="middle" font-size="12" class="mono" style="font-family:var(--font-mono)">θᵢ = θᵣ</text>
+  <rect x="70" y="196" width="14" height="96" rx="4" class="f-skin2"/>
+  <circle cx="78" cy="176" r="50" class="f-green"/><circle cx="44" cy="196" r="28" class="f-green"/><circle cx="112" cy="196" r="28" class="f-green"/>
+  <circle cx="60" cy="190" r="6" class="f-yellow"/><circle cx="98" cy="168" r="6" class="f-yellow"/><circle cx="80" cy="206" r="6" class="f-yellow"/>
+  <circle cx="132" cy="252" r="8" class="f-yellow"/>
+  <path d="M132 264 V300 m-6 -7 l6 7 6 -7" fill="none" class="s-ink" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="146" y="262" width="96" height="22" rx="6" class="f-surface"/><text x="194" y="277" text-anchor="middle" font-size="12" style="font-family:var(--font-mono)">a ≈ 9,8 m/s²</text>
+  <g class="s-ink" stroke-width="4" stroke-linecap="round"><path d="M450 250 L444 330 M494 250 L500 330"/></g>
+  <rect x="436" y="196" width="72" height="58" rx="8" class="f-blue"/>
+  <rect x="436" y="196" width="72" height="14" rx="6" class="f-blue-soft" opacity=".5"/>
+  <path d="M436 244 Q404 252 392 312" fill="none" class="s-blue jet" stroke-width="5" stroke-linecap="round"/>
+  <rect x="440" y="168" width="70" height="22" rx="6" class="f-surface"/><text x="475" y="183" text-anchor="middle" font-size="12" style="font-family:var(--font-mono)">P = ρgh</text>
+  <ellipse cx="250" cy="372" rx="70" ry="8" class="f-hill2" opacity=".6"/>
+  <circle cx="220" cy="292" r="15" class="f-skin"/><path d="M205 288 Q220 268 236 288Z" class="f-hair"/>
+  <path d="M200 372 V326 Q200 310 220 310 Q240 310 240 326 V372Z" class="f-blue"/>
+  <rect x="204" y="350" width="32" height="22" class="f-hair"/>
+  <path d="M238 324 L262 304" class="s-blue" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="268" cy="298" r="9" class="f-surface"/><circle cx="268" cy="298" r="9" fill="none" class="s-ink" stroke-width="3"/>
+  <circle cx="290" cy="300" r="15" class="f-skin2"/><path d="M274 298 Q276 280 290 280 Q306 280 306 298 Q300 288 290 288 Q280 288 274 298Z" class="f-hair"/>
+  <path d="M270 372 V328 Q270 312 290 312 Q310 312 310 328 V372Z" class="f-green"/>
+  <rect x="274" y="350" width="32" height="22" class="f-hair"/>
+  <rect x="300" y="326" width="22" height="28" rx="3" class="f-surface" transform="rotate(-10 311 340)"/>
+  <path d="M304 334 h12 M304 340 h12 M304 346 h8" class="s-muted" stroke-width="1.6" transform="rotate(-10 311 340)"/>
+</svg>`;
+}
+function benefitIcon(k){
+  const p = {
+    ritmo:`<circle cx="22" cy="22" r="18" class="f-blue-soft"/><circle cx="22" cy="22" r="13" fill="none" class="s-blue" stroke-width="3"/><path d="M22 14v8l6 4" fill="none" class="s-blue" stroke-width="3" stroke-linecap="round"/>`,
+    material:`<circle cx="22" cy="22" r="18" class="f-green-soft"/><path d="M18 8h8v5l3 4v17a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3V17l3-4Z" class="f-green"/><circle cx="26" cy="24" r="1.6" class="f-surface"/><circle cx="26" cy="30" r="1.6" class="f-surface"/>`,
+    equipo:`<circle cx="22" cy="22" r="18" class="f-yellow-soft"/><circle cx="16" cy="18" r="5" class="f-yellow"/><circle cx="28" cy="18" r="5" class="f-green"/><path d="M8 34a8 8 0 0 1 16 0Z" class="f-yellow"/><path d="M20 34a8 8 0 0 1 16 0Z" class="f-green"/>`,
+    comunidad:`<circle cx="22" cy="22" r="18" class="f-green-soft"/><path d="M10 24 22 13l12 11v11H10Z" class="f-blue"/><rect x="19" y="27" width="6" height="8" class="f-yellow"/><path d="M30 10q6 2 4 9-6-2-4-9Z" class="f-green"/>`
+  };
+  return `<svg viewBox="0 0 44 44" aria-hidden="true">${p[k]}</svg>`;
+}
+function badgeSVG(b){
+  const fill = {blue:"f-blue", green:"f-green", yellow:"f-yellow"}[b.c];
+  const txt = b.c==="yellow" ? "var(--yellow-ink)" : (b.c==="blue" ? "var(--blue-ink)" : "var(--green-ink)");
+  return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M20 40 L14 62 L24 56 L30 62 L32 44Z" class="f-blue-soft"/><path d="M44 40 L50 62 L40 56 L34 62 L32 44Z" class="f-green-soft"/><circle cx="32" cy="28" r="22" class="${fill}"/><circle cx="32" cy="28" r="16.5" fill="none" stroke="${txt}" stroke-width="1.5" opacity=".5"/><text x="32" y="35" text-anchor="middle" font-size="19" font-weight="800" style="fill:${txt};font-family:var(--font-display)">${esc(b.sym)}</text></svg>`;
+}
+
+/* ================= COMPONENTES UI ================= */
+function toast(html, withFisi=false){
+  const w = $("#toasts"); const t = document.createElement("div");
+  t.className = "toast"; t.innerHTML = (withFisi ? fisiSVG("Fisi") : "<span></span>") + `<div>${html}</div>`;
+  if (!withFisi) t.style.gridTemplateColumns = "1fr";
+  w.appendChild(t); while (w.children.length > 2) w.firstChild.remove(); setTimeout(() => t.remove(), 4800);
+}
+function award(id){
+  if (S.badges[id]) return;
+  S.badges[id] = Date.now(); save();
+  const b = BADGES.find(x => x.id === id);
+  if (b) toast(`<b>¡Insignia desbloqueada: ${esc(b.name)}!</b><br>${esc(b.desc)}. Fisi celebra contigo.`, true);
+}
+function isDone(id){
+  if (S.acts[id]) return true;
+  if (id === "m2-experimento") return !!S.acts["lab-observacion"];
+  return false;
+}
+function markDone(id, silent=false){
+  if (S.acts[id]) return;
+  S.acts[id] = Date.now(); save();
+  $$(`[data-status="${id}"]`).forEach(updateStatusEl);
+  if (!silent) toast(`Actividad completada. ${pick(MOTIVATION)}`);
+  checkBadges();
+}
+function checkBadges(){
+  if (S.acts["lab-prediccion"] && S.acts["lab-observacion"] && S.acts["lab-analisis"]) award("laboratorista");
+  if (S.acts["m4-proyecto"]) award("proyecto");
+  if (S.posts.length) award("colaborador");
+  if (S.diag) award("primer-paso");
+}
+function updateStatusEl(el){
+  const d = isDone(el.dataset.status);
+  el.className = "status" + (d ? " done" : "");
+  el.textContent = d ? "✓ Completada" : "Pendiente";
+}
+function activityShell(id, n, title, desc){
+  return `<section class="activity" id="act-${id}" aria-labelledby="h-${id}">
+    <div class="activity-head"><div class="t"><span class="eyebrow">Actividad ${n}</span><h3 id="h-${id}">${title}</h3>${desc?`<p class="muted">${desc}</p>`:""}</div>
+    <span data-status="${id}" class="status">Pendiente</span></div>
+    <div class="act-body" data-act="${id}"></div></section>`;
+}
+function hydrateStatuses(root){ $$("[data-status]", root).forEach(updateStatusEl); }
+
+/* ---- Pregunta de selección múltiple ---- */
+let uid = 0;
+function MCQ(el, q, opts={}){
+  const name = "q" + (++uid);
+  let attempts = 0, resolved = false;
+  el.innerHTML = `<div class="q">
+    <p class="q-text">${q.q}</p>
+    <fieldset class="opts"><legend class="sr-only">Opciones de respuesta</legend>
+      ${q.opts.map((o,i)=>`<div class="opt" data-i="${i}"><input type="radio" name="${name}" id="${name}-${i}" value="${i}"><label for="${name}-${i}"><span class="key">${LETTERS[i]}</span><span>${o}</span></label></div>`).join("")}
+    </fieldset>
+    <div class="row"><button class="btn btn-primary" data-k="check" disabled>Comprobar</button>${opts.hintButton && q.hint ? `<button class="btn btn-ghost" data-k="hint">Ver pista (opcional)</button>`:""}</div>
+    <div class="fb-area" aria-live="polite"></div>
+  </div>`;
+  const fs = $(".opts", el), area = $(".fb-area", el), check = $('[data-k="check"]', el);
+  fs.addEventListener("change", () => { check.disabled = resolved; });
+  const showHint = () => {
+    if ($(".hint", area)) return;
+    area.insertAdjacentHTML("afterbegin", `<div class="hint">${ICON.bulb}<div><b>Pista de Fisi:</b> ${q.hint}</div></div>`);
+    opts.onHint && opts.onHint();
+  };
+  el.addEventListener("click", e => {
+    const k = e.target.closest("[data-k]")?.dataset.k; if (!k) return;
+    if (k === "hint") { showHint(); e.target.closest("[data-k]").remove(); }
+    if (k === "check") {
+      const sel = $("input:checked", fs); if (!sel) return;
+      const i = +sel.value; attempts++;
+      const ok = i === q.a;
+      $$("input", fs).forEach(x => x.disabled = true); fs.classList.add("locked");
+      sel.closest(".opt").classList.add(ok ? "right" : "wrong");
+      check.disabled = true;
+      opts.onCheck && opts.onCheck(ok, i, attempts);
+      if (ok) { resolved = true; feedbackOK(); }
+      else feedbackBad(i);
+    }
+    if (k === "retry") {
+      $$("input", fs).forEach(x => { x.disabled = false; x.checked = false; });
+      fs.classList.remove("locked"); $$(".opt", fs).forEach(o => o.classList.remove("wrong"));
+      area.innerHTML = ""; check.disabled = true; $("input", fs).focus();
+    }
+    if (k === "reveal") {
+      resolved = true;
+      $$(".opt", fs)[q.a].classList.add("right");
+      area.innerHTML = `<div class="fb info"><span class="fb-t">La respuesta es ${LETTERS[q.a]}</span><p>${q.why}</p></div>${nextBtn()}`;
+      opts.onReveal && opts.onReveal();
+    }
+    if (k === "next") opts.onNext && opts.onNext();
+  });
+  const nextBtn = () => opts.onNext ? `<div class="row" style="margin-top:12px"><button class="btn btn-yellow" data-k="next">${opts.nextLabel || "Siguiente"}</button></div>` : "";
+  function feedbackOK(){
+    area.innerHTML = `<div class="fb ok"><span class="fb-t">¡Correcto!${attempts>1?" Lo lograste al intentarlo de nuevo.":""}</span><p>${q.why}</p></div>${nextBtn()}`;
+  }
+  function feedbackBad(i){
+    const specific = q.fb && q.fb[i] ? q.fb[i] : "Esa opción no explica bien la situación. Puedes pedir una pista o intentarlo de nuevo.";
+    const hintHTML = (!opts.hintButton && q.hint) ? `<div class="hint">${ICON.bulb}<div><b>Pista de Fisi:</b> ${q.hint}</div></div>` : "";
+    area.innerHTML = `<div class="fb bad"><span class="fb-t">Aún no</span><p>${specific}</p></div>${hintHTML}
+      <div class="row" style="margin-top:12px"><button class="btn btn-primary" data-k="retry">Intentar de nuevo</button>
+      ${opts.hintButton && q.hint ? `<button class="btn btn-ghost" data-k="hint">Ver pista</button>`:""}
+      <button class="btn btn-ghost" data-k="reveal">Ver la explicación</button></div>`;
+  }
+}
+
+/* ---- Cuestionario completo ---- */
+function Quiz(el, id){
+  const Q = QUIZZES[id]; let idx = 0; const first = [];
+  const prev = S.quizzes[id];
+  function step(){
+    const q = Q.qs[idx];
+    el.innerHTML = `<div class="stack">
+      <div class="q-meta"><span>Pregunta ${idx+1} de ${Q.qs.length}</span><span class="chip ${TOPICS[q.topic]?"green":""}">${TOPICS[q.topic]?.label||""}</span></div>
+      <div class="progress-q" aria-hidden="true"><i style="width:${(idx/Q.qs.length)*100}%"></i></div>
+      ${idx===0 && prev ? `<p class="small muted">Tu último resultado fue ${prev.last} de ${prev.total}. Cuenta el primer intento de cada pregunta.</p>`:""}
+      <div class="slot"></div></div>`;
+    MCQ($(".slot", el), q, {
+      onCheck:(ok)=>{ if (first[idx] === undefined) first[idx] = ok; },
+      onReveal:()=>{ if (first[idx] === undefined) first[idx] = false; },
+      onNext:()=>{ idx++; idx < Q.qs.length ? step() : finish(); el.scrollIntoView({block:"start", behavior:"smooth"}); },
+      nextLabel: idx === Q.qs.length-1 ? "Ver resultados" : "Siguiente pregunta"
+    });
+  }
+  function finish(){
+    const score = first.filter(Boolean).length, total = Q.qs.length;
+    const miss = Q.qs.filter((q,i)=>!first[i]).map(q=>q.topic);
+    const r = S.quizzes[id] || {best:0, attempts:0};
+    S.quizzes[id] = {last:score, total, best:Math.max(r.best||0, score), attempts:(r.attempts||0)+1, miss, date:Date.now()};
+    save(); markDone(id, true);
+    const ratio = score/total;
+    const msg = ratio === 1 ? "¡Excelente! Dominas estas ideas." : ratio >= .5 ? "Vas por buen camino. Repasa las preguntas marcadas." : "Este tema necesita un repaso. Usa las explicaciones y vuelve a intentarlo.";
+    const topics = [...new Set(miss)];
+    el.innerHTML = `<div class="stack">
+      <div class="row" style="gap:18px"><span class="score-big">${score}/${total}</span><div><b>${msg}</b><p class="small muted">Puedes repetir el cuestionario las veces que quieras.</p></div></div>
+      <ul class="result-list">${Q.qs.map((q,i)=>`<li><span class="mark ${first[i]?"ok":"bad"}" aria-label="${first[i]?"Correcta":"Por repasar"}">${first[i]?"✓":"✗"}</span><span><b>${q.q}</b><br><span class="muted small">${q.why}</span></span></li>`).join("")}</ul>
+      ${topics.length ? `<div class="hint">${ICON.bulb}<div><b>Para reforzar:</b> ${topics.map(t=>`${TOPICS[t].label}: ${TOPICS[t].tip}`).join(" ")}</div></div>`:""}
+      <div class="row"><button class="btn btn-primary" data-k="again">Repetir cuestionario</button><a class="btn btn-ghost" href="#progreso">Ver mi progreso</a></div>
+    </div>`;
+    $('[data-k="again"]', el).onclick = () => Quiz(el, id);
+  }
+  step();
+}
+
+/* ---- Ejercicio numérico ---- */
+function Numeric(el, data, key, opts={}){
+  const st = (opts.store || S.nums);
+  const rec = st[key] || {solved:false, attempts:0, hints:0};
+  const iid = "n" + (++uid);
+  let wrong = 0, hintIdx = 0;
+  el.innerHTML = `<div class="stack">
+    <p class="q-text">${data.prompt}</p>
+    ${rec.solved ? `<span class="chip ok" style="justify-self:start">✓ Ya lo resolviste. Puedes practicar otra vez.</span>`:""}
+    <div class="num-row"><label class="sr-only" for="${iid}">Tu respuesta en ${data.unit}</label>
+      <input class="inp mono" id="${iid}" inputmode="decimal" autocomplete="off" placeholder="Tu respuesta"><span class="unit">${data.unit}</span>
+      <button class="btn btn-primary" data-k="check">Comprobar</button>
+      <button class="btn btn-ghost" data-k="hint">Ver pista</button></div>
+    <p class="help">Escribe solo el número. Puedes usar coma decimal (ej.: 3,5).</p>
+    <div class="hints"></div><div class="fb-area" aria-live="polite"></div></div>`;
+  const inp = $("input", el), area = $(".fb-area", el), hints = $(".hints", el);
+  const persist = () => { st[key] = rec; save(); };
+  const doCheck = () => {
+    const v = parseNum(inp.value);
+    if (isNaN(v)) { area.innerHTML = `<div class="fb info"><span class="fb-t">Escribe un número</span><p>Por ejemplo: 12 o 3,33. No incluyas la unidad.</p></div>`; return; }
+    rec.attempts++;
+    const alt = (data.alts||[]).find(a => near(v, a.v, 0.01));
+    if (near(v, data.ans, data.tol) || alt) {
+      rec.solved = true; persist();
+      area.innerHTML = `<div class="fb ok"><span class="fb-t">¡Correcto!</span><p>${alt?alt.m+"<br>":""}<span class="mono">${data.sol}</span></p></div>`;
+      opts.onSolved && opts.onSolved(rec);
+      return;
+    }
+    wrong++; persist();
+    const trap = (data.traps||[]).find(t => near(v, t.v, 0.02));
+    area.innerHTML = `<div class="fb bad"><span class="fb-t">Aún no</span><p>${trap ? trap.m : "Revisa tu cálculo y las unidades. " + pick(MOTIVATION)}</p>
+      ${wrong>=2 ? `<div class="row"><button class="btn btn-ghost btn-sm" data-k="sol">Ver solución paso a paso</button></div>`:""}</div>`;
+    opts.onWrong && opts.onWrong(rec);
+  };
+  el.addEventListener("click", e => {
+    const k = e.target.closest("[data-k]")?.dataset.k;
+    if (k === "check") doCheck();
+    if (k === "hint") {
+      if (hintIdx < data.hints.length) {
+        hints.insertAdjacentHTML("beforeend", `<div class="hint" style="margin-bottom:8px">${ICON.bulb}<div><b>Pista ${hintIdx+1}:</b> ${data.hints[hintIdx]}</div></div>`);
+        hintIdx++; rec.hints = (rec.hints||0)+1; persist(); opts.onHint && opts.onHint(rec);
+      }
+      if (hintIdx >= data.hints.length) e.target.closest("[data-k]").disabled = true;
+    }
+    if (k === "sol") area.innerHTML = `<div class="fb info"><span class="fb-t">Solución</span><p class="mono">${data.sol}</p><p class="small">Ahora escribe el resultado para comprobarlo.</p></div>`;
+  });
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") doCheck(); });
+}
+
+/* ---- Clasificación ---- */
+function Classify(el, id, onAllRight){
+  const C = CLASSIFY[id]; const sel = C.items.map(() => null);
+  el.innerHTML = `<div class="stack"><p class="muted">${C.intro}</p>
+    <div class="cls">${C.items.map((it,i)=>`<div class="cls-item" data-i="${i}">
+      <span class="lbl" id="${id}-l${i}">${it.l}</span>
+      <div class="seg" role="group" aria-labelledby="${id}-l${i}">${C.cats.map((c,j)=>`<button type="button" aria-pressed="false" data-j="${j}">${c}</button>`).join("")}</div>
+      <div class="why" hidden></div></div>`).join("")}</div>
+    <div class="row"><button class="btn btn-primary" data-k="check">Comprobar</button></div>
+    <div class="fb-area" aria-live="polite"></div></div>`;
+  const area = $(".fb-area", el);
+  el.addEventListener("click", e => {
+    const b = e.target.closest(".seg button");
+    if (b) {
+      const item = b.closest(".cls-item"), i = +item.dataset.i;
+      sel[i] = +b.dataset.j;
+      $$("button", item).forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+      item.classList.remove("right","wrong"); $(".why", item).hidden = true;
+      return;
+    }
+    if (e.target.closest('[data-k="check"]')) {
+      const missing = sel.filter(x => x === null).length;
+      if (missing) { area.innerHTML = `<div class="fb info"><span class="fb-t">Te faltan ${missing} por clasificar</span><p>Elige una opción para cada elemento.</p></div>`; return; }
+      let ok = 0;
+      $$(".cls-item", el).forEach((item, i) => {
+        const right = sel[i] === C.items[i].a; if (right) ok++;
+        item.classList.toggle("right", right); item.classList.toggle("wrong", !right);
+        const w = $(".why", item); w.hidden = false;
+        w.innerHTML = right ? `✓ ${C.items[i].why}` : `✗ Revisa: ${C.items[i].why}`;
+      });
+      S.cls[id] = {last:ok, total:C.items.length, miss:C.items.length-ok}; save();
+      if (ok === C.items.length) { area.innerHTML = `<div class="fb ok"><span class="fb-t">¡Todo correcto! ${ok} de ${ok}</span><p>Clasificaste cada elemento con buen criterio.</p></div>`; onAllRight && onAllRight(); }
+      else area.innerHTML = `<div class="fb bad"><span class="fb-t">${ok} de ${C.items.length} correctas</span><p>Lee la explicación de las marcadas en rojo, cambia tu elección y vuelve a comprobar.</p></div>`;
+    }
+  });
+}
+
+/* ================= GUÍAS DESCARGABLES ================= */
+async function cap(name){
+  try { if (!window.claude || typeof window.claude.use !== "function") return null; return await window.claude.use(name); }
+  catch(e){ return null; }
+}
+function guideHTML(g){
+  const sec = g.sections.map(s => `<h2>${esc(s.h)}</h2>${s.p?`<p>${esc(s.p)}</p>`:""}${s.list?`<${s.ol?"ol":"ul"}>${s.list.map(x=>`<li>${esc(x)}</li>`).join("")}</${s.ol?"ol":"ul"}>`:""}${s.lines?Array.from({length:s.lines}).map(()=>`<div class="line"></div>`).join(""):""}${s.table?`<table><tr>${s.table.cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>${(s.table.rows.length?s.table.rows:Array.from({length:s.table.blank||4},()=>s.table.cols.map(()=>""))).map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table>`:""}`).join("");
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(g.title)}</title>
+<style>body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:24px auto;padding:0 16px;color:#13241E;line-height:1.5}h1{color:#1A5DB0;font-size:24px;margin-bottom:4px}h2{color:#2A7A4A;font-size:17px;margin-top:22px;border-bottom:2px solid #F4B400;padding-bottom:3px}.line{border-bottom:1px solid #999;height:26px}table{border-collapse:collapse;width:100%;margin-top:6px}th,td{border:1px solid #888;padding:6px;height:22px;text-align:left;font-size:14px}.meta{color:#4A5F57;font-size:13px}@media print{body{margin:0}}</style></head>
+<body><h1>${esc(g.title)}</h1><p class="meta">ExploraFísica · Descubre, experimenta y aprende · Guía para trabajar sin conexión. Ábrela en el navegador y usa la opción Imprimir.</p>${sec}</body></html>`;
+}
+function guideText(g){
+  return [g.title.toUpperCase(), "ExploraFísica · Guía para trabajar sin conexión", ""].concat(g.sections.flatMap(s => [
+    "", "== " + s.h + " ==", s.p || "", ...(s.list ? s.list.map((x,i)=>(s.ol?(i+1)+". ":"- ")+x) : []),
+    ...(s.lines ? Array.from({length:s.lines},()=>"________________________________________") : []),
+    ...(s.table ? [s.table.cols.join(" | "), ...(s.table.rows.length ? s.table.rows.map(r=>r.join(" | ")) : Array.from({length:s.table.blank||4},()=>s.table.cols.map(()=>"____").join(" | ")))] : [])
+  ])).filter(x => x !== null).join("\n");
+}
+async function offerFile(filename, content, textFallback){
+  const d = await cap("downloads");
+  if (d) {
+    try { await d.save({filename, data:content}); toast("Archivo listo. Ábrelo y usa la opción Imprimir de tu navegador si lo necesitas en papel."); return; }
+    catch(e){ if (e && e.code === "declined") { toast("Descarga cancelada."); return; } if (e && e.code === "rate_limited") { toast("Ya hay una descarga pendiente. Espera un momento."); return; } }
+  }
+  showCopyModal(filename, textFallback || content);
+}
+function showCopyModal(title, text){
+  const ov = document.createElement("div"); ov.className = "overlay";
+  ov.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><h3 id="mt">Copia el contenido</h3>
+    <p class="muted">La descarga no está disponible en este dispositivo. Copia el texto y pégalo en un documento para guardarlo o imprimirlo.</p>
+    <label class="sr-only" for="mtxt">Contenido de ${esc(title)}</label><textarea id="mtxt" readonly>${esc(text)}</textarea>
+    <div class="row"><button class="btn btn-primary" data-k="copy">Copiar texto</button><button class="btn btn-ghost" data-k="close">Cerrar</button></div></div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.addEventListener("click", async e => {
+    const k = e.target.closest("[data-k]")?.dataset.k;
+    if (e.target === ov || k === "close") close();
+    if (k === "copy") { const ta = $("textarea", ov); try { await navigator.clipboard.writeText(ta.value); toast("Texto copiado."); } catch(_) { ta.focus(); ta.select(); toast("Selecciona el texto y cópialo con tu dispositivo."); } }
+  });
+  ov.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+  $('[data-k="copy"]', ov).focus();
+}
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); toast("Texto copiado."); } catch(e) { showCopyModal("texto", text); }
+}
+/* ================= PERSONALIZACIÓN (reglas sencillas) ================= */
+function weakTopics(){
+  const w = {}; const add = (t, n) => { if (TOPICS[t]) w[t] = (w[t]||0) + n; };
+  if (S.diag) DIAG.forEach((q,i) => { if (S.diag.answers[i] !== q.a) add(q.topic, 2); });
+  Object.values(S.quizzes).forEach(r => (r.miss||[]).forEach(t => add(t, 1)));
+  Object.entries(S.nums).forEach(([k,r]) => { const d = NUMERIC[k]; if (d && (!r.solved || r.attempts > 1)) add(d.topic, r.solved ? .5 : 1); });
+  Object.entries(S.chal).forEach(([k,r]) => { const c = CHALLENGES.find(x=>x.id===k); if (c && r.wrong) add(c.topic, r.solved ? .5 : 1); });
+  const clsTopic = {"m1-identifica":"movimiento","m2-aplicaciones":"presion","m3-clasifica":"luz"};
+  Object.entries(S.cls).forEach(([k,r]) => { if (r.miss) add(clsTopic[k], 1); });
+  return Object.entries(w).filter(([,v])=>v>=1).sort((a,b)=>b[1]-a[1]).map(([t])=>t);
+}
+function recommendedModule(){
+  if (!S.diag) return null;
+  const order = ["movimiento","fuerza","presion","luz","energia"];
+  const weak = order.find(t => S.diag.answers[DIAG.findIndex(q=>q.topic===t)] !== DIAG.find(q=>q.topic===t).a);
+  return weak ? TOPICS[weak].mod : "m4";
+}
+function modProgress(id){ const a = MODULES[id].activities; return {done:a.filter(([k])=>isDone(k)).length, total:a.length}; }
+
+/* ================= VISTAS ================= */
+function viewHome(app){
+  const started = Object.keys(S.acts).length || S.diag;
+  const routeItems = [["diagnostico","Diagnóstico", !!S.diag],["modulos","Módulos", Object.keys(S.visited).length>0],["laboratorio","Laboratorio", !!S.acts["lab-observacion"]],["retos","Retos", Object.values(S.chal).some(c=>c.solved)],["comunidad","Comunidad", S.posts.length>0]];
+  app.innerHTML = `<div class="view">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Objeto Virtual de Aprendizaje · Física para secundaria</span>
+        <h1>¡La Física está <span>en todas</span> <em>partes</em>!</h1>
+        <p class="lead">Explora los fenómenos que te rodean, realiza experimentos, resuelve desafíos y comparte tus descubrimientos.</p>
+        <div class="row"><a class="btn btn-primary" href="${S.diag ? "#modulos" : "#diagnostico"}">${started ? "Continuar explorando" : "Comenzar a explorar"}</a><a class="btn btn-yellow" href="#laboratorio">Conoce el laboratorio</a></div>
+        <p class="small muted">${S.diag ? "Ya hiciste el diagnóstico. Sigue con los módulos." : "Primero harás un diagnóstico corto de 5 preguntas. No es una nota."}</p>
+      </div>
+      <div class="hero-art">${heroSVG()}</div>
+    </section>
+    ${fisiSay("Hola, soy Fisi.", "Te acompañaré con pistas y retos. Aquí puedes equivocarte, volver a intentarlo y avanzar a tu ritmo.")}
+    <section class="section" aria-labelledby="h-ben">
+      <div class="section-head"><h2 id="h-ben">Así aprendes en ExploraFísica</h2></div>
+      <div class="grid g4">
+        <div class="benefit">${benefitIcon("ritmo")}<div><h4>Aprende a tu ritmo</h4><p class="small muted">Repite actividades y cuestionarios cuando quieras.</p></div></div>
+        <div class="benefit">${benefitIcon("material")}<div><h4>Experimenta con materiales cotidianos</h4><p class="small muted">Botellas, agua, linternas y reglas.</p></div></div>
+        <div class="benefit">${benefitIcon("equipo")}<div><h4>Trabaja en equipo</h4><p class="small muted">Investiga y comparte con tus compañeros.</p></div></div>
+        <div class="benefit">${benefitIcon("comunidad")}<div><h4>Descubre la ciencia de tu comunidad</h4><p class="small muted">Física en la finca, el río y la vereda.</p></div></div>
+      </div>
+    </section>
+    <section class="section" aria-labelledby="h-route">
+      <div class="section-head"><h2 id="h-route">Ruta sugerida</h2><p class="muted">Puedes seguirla en orden o saltar a lo que necesites.</p></div>
+      <ol class="route">${routeItems.map(([h,l,d])=>`<li><a href="#${h}" class="${d?"done":""}">${l}</a></li>`).join("")}</ol>
+    </section>
+    <section class="grid g2">
+      <div class="panel"><h3>Pensado para la conectividad rural</h3><p class="small">Una vez abierta, la página funciona sin internet, salvo los enlaces externos marcados con <span class="net-note">${ICON.globe} Requiere internet</span>. Descarga las guías para trabajar en papel.</p></div>
+      <div class="panel"><h3>¿Compartes el dispositivo?</h3><p class="small">El progreso se guarda solo en este navegador. Al terminar, puedes reiniciarlo desde <a href="#progreso">Mi progreso</a> para que otro compañero empiece de cero.</p></div>
+    </section>
+  </div>`;
+}
+
+function viewDiag(app){
+  let idx = 0; const answers = [];
+  const intro = () => {
+    app.innerHTML = `<div class="view"><div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Diagnóstico</span><span class="eyebrow">Antes de comenzar</span><h1>Diagnóstico inicial</h1></div>
+    ${fisiSay("Esto no es un examen.", "Son 5 preguntas para saber qué ya sabes y recomendarte por dónde empezar. Si no sabes una respuesta, marca «Aún no lo sé».")}
+    <div class="activity" id="diagBox"></div></div>`;
+    S.diag ? result(S.diag.answers, true) : step();
+  };
+  function step(){
+    const q = DIAG[idx], box = $("#diagBox");
+    box.innerHTML = `<div class="q">
+      <div class="q-meta"><span>Pregunta ${idx+1} de ${DIAG.length}</span><span class="chip green">${TOPICS[q.topic].label}</span></div>
+      <div class="progress-q" aria-hidden="true"><i style="width:${idx/DIAG.length*100}%"></i></div>
+      <p class="q-text">${q.q}</p>
+      <fieldset class="opts"><legend class="sr-only">Opciones</legend>
+      ${q.opts.concat(["Aún no lo sé"]).map((o,i)=>{ const v = i===q.opts.length ? -1 : i; return `<div class="opt"><input type="radio" name="dq" id="dq${i}" value="${v}"><label for="dq${i}"><span class="key">${i===q.opts.length?"?":LETTERS[i]}</span><span>${o}</span></label></div>`;}).join("")}
+      </fieldset>
+      <div class="row"><button class="btn btn-primary" id="dNext" disabled>${idx===DIAG.length-1?"Ver mi resultado":"Siguiente"}</button>${idx>0?`<button class="btn btn-ghost" id="dBack">Anterior</button>`:""}</div></div>`;
+    if (answers[idx] !== undefined) { const r = $(`input[value="${answers[idx]}"]`, box); if (r) { r.checked = true; $("#dNext").disabled = false; } }
+    $(".opts", box).onchange = () => $("#dNext").disabled = false;
+    $("#dNext").onclick = () => {
+      answers[idx] = +$("input:checked", box).value; idx++;
+      if (idx < DIAG.length) step();
+      else { S.diag = {answers:answers.slice(), date:Date.now()}; save(); checkBadges(); result(answers, false); }
+    };
+    if ($("#dBack")) $("#dBack").onclick = () => { idx--; step(); };
+  }
+  function result(ans, old){
+    const box = $("#diagBox");
+    const ok = DIAG.filter((q,i)=>ans[i]===q.a).length;
+    const rec = recommendedModule(); const M = MODULES[rec];
+    box.innerHTML = `<div class="stack">
+      <span class="eyebrow">Resultado orientativo${old ? " · guardado" : ""}</span>
+      <div class="row" style="gap:18px"><span class="score-big">${ok}/5</span><p><b>Respuestas acertadas.</b><br><span class="small muted">No es una calificación. Sirve para orientar tu ruta.</span></p></div>
+      <ul class="result-list">${DIAG.map((q,i)=>{ const st = ans[i]===q.a ? ["ok","✓","Lo tienes claro"] : ans[i]===-1 ? ["na","?","Marcaste «Aún no lo sé»: lo aprenderás aquí"] : ["bad","!","Conviene reforzar"]; return `<li><span class="mark ${st[0]}" aria-hidden="true">${st[1]}</span><span><b>${TOPICS[q.topic].label}:</b> ${st[2]}.${ans[i]!==q.a?` <span class="muted small">${TOPICS[q.topic].tip}</span>`:""}</span></li>`;}).join("")}</ul>
+      <div class="panel"><span class="eyebrow">Te recomendamos empezar por</span><h3>Módulo ${M.n}. ${M.title}</h3>
+      <p class="small">${rec==="m4" ? "Respondiste bien todo. Prueba el reto colaborativo y los retos de nivel Investigador y Científico." : "Ahí encontrarás explicaciones, ejemplos y actividades para reforzar los temas marcados."}${ans[4]!==DIAG[4].a ? " La energía se trabaja en el Módulo 3 (la luz como energía) y en el reto colaborativo." : ""}</p>
+      <div class="row"><a class="btn btn-primary" href="#${rec}">Ir al Módulo ${M.n}</a><a class="btn btn-ghost" href="#modulos">Ver todos los módulos</a></div></div>
+      <div class="row"><button class="btn btn-ghost" id="dAgain">Repetir diagnóstico</button></div></div>`;
+    $("#dAgain").onclick = () => { idx = 0; answers.length = 0; step(); };
+  }
+  intro();
+}
+
+function modCard(id){
+  const M = MODULES[id], p = modProgress(id), rec = recommendedModule() === id;
+  const bg = {blue:"var(--blue-soft)", green:"var(--green-soft)", yellow:"var(--yellow-soft)"}[M.tone];
+  return `<article class="card mod-card">
+    <div class="mod-art" style="background:${bg}">${modIcon(id)}</div>
+    <div class="mod-body">
+      <div class="row"><span class="chip">Módulo ${M.n}</span><span class="chip ${M.level==="Básico"?"green":M.level==="Intermedio"?"blue":"yellow"}">Nivel: ${M.level}</span>${rec?`<span class="chip yellow">Recomendado para ti</span>`:""}${S.visited[id]?`<span class="chip">Visitado</span>`:""}</div>
+      <h3>${M.title}</h3><p class="muted">${M.desc}</p>
+      <details><summary>Objetivos y actividades</summary><div class="stack small"><b>Objetivos</b><ul class="ticks">${M.goals.map(g=>`<li>${g}</li>`).join("")}</ul><b>Actividades</b><ul class="ticks">${M.activities.map(([k,l])=>`<li>${l}${isDone(k)?" ✓":""}</li>`).join("")}</ul></div></details>
+      <div class="stack"><div class="row small" style="justify-content:space-between"><span>Progreso</span><span class="mono">${p.done}/${p.total}</span></div><div class="bar"><i style="width:${p.done/p.total*100}%"></i></div></div>
+      <a class="btn btn-primary" href="#${id}">${p.done ? "Continuar módulo" : "Ingresar al módulo"}</a>
+    </div></article>`;
+}
+function viewModules(app){
+  const rec = recommendedModule();
+  app.innerHTML = `<div class="view">
+    <div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Módulos</span><h1>Explora los módulos</h1><p class="muted">Elige un módulo. Puedes avanzar en cualquier orden.</p></div>
+    ${rec ? fisiSay("Según tu diagnóstico…", `te sugiero empezar por el Módulo ${MODULES[rec].n}: ${MODULES[rec].title}.`, true) : fisiSay("¿Aún no haces el diagnóstico?", `Son 5 preguntas y te ayudan a elegir por dónde empezar. <a href="#diagnostico">Hacer el diagnóstico</a>.`, true)}
+    <div class="grid g2">${["m1","m2","m3","m4"].map(modCard).join("")}</div></div>`;
+}
+
+function conceptsHTML(M){
+  return `<div class="grid g3">${M.concepts.map(c=>`<article class="card concept"><h3>${c.t}</h3><p>${c.d}</p>${c.f?`<span class="formula">${c.f}</span>`:""}<p class="ex"><b>Ejemplo:</b> ${c.ex}</p>
+    <details><summary>Otra forma de verlo</summary>${c.alt==="svg:path" ? `<svg viewBox="0 0 260 110" role="img" aria-label="Diagrama: el camino curvo es la distancia; la flecha recta es el desplazamiento."><path d="M20 80 Q60 10 120 60 T240 40" fill="none" class="s-green" stroke-width="4" stroke-dasharray="7 5"/><path d="M20 80 L234 42" class="s-blue" stroke-width="3.5"/><path d="M234 42 l-12 -2 4 10z" class="f-blue"/><circle cx="20" cy="80" r="6" class="f-ink"/><text x="20" y="102" font-size="12">inicio</text><text x="208" y="70" font-size="12">final</text><text x="90" y="22" font-size="12" style="fill:var(--green)">distancia</text><text x="110" y="88" font-size="12" style="fill:var(--blue)">desplazamiento</text></svg>` : `<p class="small">${c.alt}</p>`}</details></article>`).join("")}</div>`;
+}
+function moduleGuide(id){
+  const M = MODULES[id];
+  const qs = Object.values(QUIZZES).filter(q=>q.mod===id).flatMap(q=>q.qs);
+  const g = {title:`Guía del Módulo ${M.n}: ${M.title}`, sections:[
+    {h:"Objetivos", list:M.goals},
+    ...(M.concepts.length ? [{h:"Ideas clave", list:M.concepts.map(c=>`${c.t}: ${c.d}${c.f?" ("+c.f+")":""} Ejemplo: ${c.ex}`)}] : []),
+    ...(id==="m1" ? [{h:"Actividad sin conexión: observa tu entorno", p:"Elige un punto de referencia (por ejemplo, el poste de la cerca). Observa durante 10 minutos y completa la tabla.", table:{cols:["Objeto","¿Se mueve?","Punto de referencia","Rápido, lento o variable"], rows:[], blank:6}}, {h:"Problema", p:NUMERIC["m1-v1"].prompt, lines:3}] : []),
+    ...(id==="m2" ? [{h:"Ejercicios", list:["m2-p1","m2-p2","m2-p3"].map(k=>NUMERIC[k].prompt), ol:true, lines:6}] : []),
+    ...(id==="m3" ? [{h:"Actividad sin conexión: la luz y los materiales", p:"Con una linterna, prueba qué materiales de tu casa dejan pasar la luz y clasifícalos.", table:{cols:["Material","Transparente, translúcido u opaco","Lo que observé"], rows:[], blank:6}}] : []),
+    ...(qs.length ? [{h:"Preguntas de repaso", list:qs.map(q=>`${q.q} — ${q.opts.map((o,i)=>LETTERS[i]+") "+o).join("  ")}`), ol:true}, {h:"Respuestas (para revisar al final)", list:qs.map((q,i)=>`${i+1}. ${LETTERS[q.a]}: ${q.why}`)}] : [])
+  ]};
+  return g;
+}
+function viewModule(app, id){
+  const M = MODULES[id]; S.visited[id] = S.visited[id] || Date.now(); save();
+  const ids = ["m1","m2","m3","m4"], i = ids.indexOf(id);
+  const bg = {blue:"var(--blue-soft)", green:"var(--green-soft)", yellow:"var(--yellow-soft)"}[M.tone];
+  app.innerHTML = `<div class="view">
+    <span class="crumbs"><a href="#inicio">Inicio</a> / <a href="#modulos">Módulos</a> / Módulo ${M.n}</span>
+    <header class="mod-head"><div class="mod-icon" style="background:${bg}">${modIcon(id)}</div>
+      <div class="stack"><div class="row"><span class="chip">Módulo ${M.n}</span><span class="chip">Nivel: ${M.level}</span></div><h1>${M.title}</h1></div></header>
+    ${fisiSay("Fisi dice:", M.fisi)}
+    <section class="section"><div class="section-head"><h2>Objetivos</h2></div><ul class="ticks">${M.goals.map(g=>`<li>${g}</li>`).join("")}</ul></section>
+    ${M.concepts.length ? `<section class="section"><div class="section-head"><h2>Ideas clave</h2><p class="muted">Lee la idea, mira el ejemplo y abre «Otra forma de verlo» si quieres otra explicación.</p></div>${conceptsHTML(M)}</section>` : ""}
+    <section class="section"><div class="section-head"><h2>Actividades</h2></div><div class="stack" id="acts" style="gap:20px"></div></section>
+    <section class="grid g2">
+      <div class="panel"><h3>Guía imprimible</h3><p class="small">Descarga la guía de este módulo para trabajar sin conexión o en papel.</p><div class="row"><button class="btn btn-ghost" id="guideBtn">Descargar guía (HTML)</button></div></div>
+      <div class="panel"><h3>Sigue explorando</h3><div class="row">${i>0?`<a class="btn btn-ghost" href="#${ids[i-1]}">← Módulo ${i}</a>`:""}${i<3?`<a class="btn btn-primary" href="#${ids[i+1]}">Módulo ${i+2} →</a>`:`<a class="btn btn-primary" href="#retos">Ir a los retos</a>`}</div></div>
+    </section></div>`;
+  const acts = $("#acts");
+  ({m1:buildM1, m2:buildM2, m3:buildM3, m4:buildM4})[id](acts);
+  hydrateStatuses(app);
+  $("#guideBtn").onclick = () => { const g = id==="m4" ? projectGuide() : moduleGuide(id); offerFile(`ExploraFisica-modulo-${M.n}.html`, guideHTML(g), guideText(g)); };
+}
+
+function buildM1(acts){
+  acts.innerHTML = activityShell("m1-identifica",1,"Identifica objetos en movimiento","Imagina que estás quieto en el patio de la finca.")
+    + activityShell("m1-problema",2,"Resuelve un problema de velocidad","Usa v = d ÷ t. Si lo necesitas, pide una pista.")
+    + activityShell("m1-quiz",3,"Cuestionario de selección múltiple","Cuatro preguntas con retroalimentación inmediata.")
+    + activityShell("m1-observa",4,"Observación en el entorno","Sal al patio o mira por la ventana durante 10 minutos.");
+  Classify($('[data-act="m1-identifica"]'), "m1-identifica", () => markDone("m1-identifica"));
+  const p = $('[data-act="m1-problema"]'); p.innerHTML = `<div class="slot1"></div><hr style="border:0;border-top:1px dashed var(--line);margin:18px 0"><div class="slot2"></div>`;
+  Numeric($(".slot1",p), NUMERIC["m1-v1"], "m1-v1", {onSolved:()=>markDone("m1-problema")});
+  Numeric($(".slot2",p), NUMERIC["m1-v2"], "m1-v2");
+  Quiz($('[data-act="m1-quiz"]'), "m1-quiz");
+  Observation($('[data-act="m1-observa"]'));
+}
+function Observation(el){
+  const rows = S.obs.rows.length ? S.obs.rows : Array.from({length:4},()=>({o:"",m:"",r:"",v:""}));
+  const draw = () => {
+    el.innerHTML = `<div class="stack">
+      <ol class="ticks"><li>Elige un punto de referencia fijo (un poste, un árbol, la puerta).</li><li>Anota objetos que observes y si se mueven respecto a ese punto.</li><li>Describe si se mueven rápido, lento o si cambian de rapidez.</li></ol>
+      <div class="tbl-wrap"><table><thead><tr><th>Objeto observado</th><th>¿Se mueve?</th><th>Punto de referencia</th><th>¿Cómo se mueve?</th></tr></thead><tbody>
+      ${rows.map((r,i)=>`<tr><td><input class="inp" aria-label="Objeto fila ${i+1}" data-r="${i}" data-f="o" value="${esc(r.o)}"></td>
+      <td><select aria-label="¿Se mueve? fila ${i+1}" data-r="${i}" data-f="m">${["","Sí","No"].map(x=>`<option ${r.m===x?"selected":""}>${x}</option>`).join("")}</select></td>
+      <td><input class="inp" aria-label="Referencia fila ${i+1}" data-r="${i}" data-f="r" value="${esc(r.r)}"></td>
+      <td><select aria-label="Cómo se mueve fila ${i+1}" data-r="${i}" data-f="v">${["","Rápido","Lento","Cambia de rapidez","No se mueve"].map(x=>`<option ${r.v===x?"selected":""}>${x}</option>`).join("")}</select></td></tr>`).join("")}
+      </tbody></table></div>
+      <div class="row"><button class="btn btn-ghost btn-sm" data-k="add">Agregar fila</button></div>
+      <div class="field"><label class="fl" for="obsNote">¿Qué objeto cambió de posición más rápido? ¿Cómo lo sabes?</label><textarea id="obsNote">${esc(S.obs.note)}</textarea></div>
+      <div class="row"><button class="btn btn-primary" data-k="save">Guardar observación</button><button class="btn btn-ghost" data-k="guide">Descargar formato imprimible</button></div>
+      <p class="help" aria-live="polite" data-msg></p></div>`;
+  };
+  draw();
+  el.addEventListener("input", e => { const t = e.target; if (t.dataset.r !== undefined) rows[+t.dataset.r][t.dataset.f] = t.value; });
+  el.addEventListener("change", e => { const t = e.target; if (t.dataset.r !== undefined) rows[+t.dataset.r][t.dataset.f] = t.value; });
+  el.addEventListener("click", e => {
+    const k = e.target.closest("[data-k]")?.dataset.k;
+    if (k === "add") { S.obs.note = $("#obsNote").value; rows.push({o:"",m:"",r:"",v:""}); draw(); }
+    if (k === "save") {
+      S.obs = {rows, note:$("#obsNote").value}; save();
+      const filled = rows.filter(r=>r.o.trim() && r.m).length;
+      $("[data-msg]", el).textContent = filled >= 3 ? "Observación guardada en este dispositivo." : `Guardado. Completa al menos 3 filas (llevas ${filled}) para terminar la actividad.`;
+      if (filled >= 3) markDone("m1-observa");
+    }
+    if (k === "guide") { const g = moduleGuide("m1"); offerFile("ExploraFisica-observacion-movimiento.html", guideHTML(g), guideText(g)); }
+  });
+}
+
+function buildM2(acts){
+  acts.innerHTML = activityShell("m2-situaciones",1,"Explora herramientas y recipientes","Situaciones de la finca y la casa.")
+    + activityShell("m2-experimento",2,"Experimenta con la presión del agua","Experimento de la botella con orificios.")
+    + activityShell("m2-ejercicios",3,"Resuelve ejercicios con datos numéricos","Tres ejercicios. Las pistas son opcionales.")
+    + activityShell("m2-aplicaciones",4,"Física en el campo y el hogar","Relaciona cada situación con la idea que la explica.");
+  Quiz($('[data-act="m2-situaciones"]'), "m2-situaciones");
+  $('[data-act="m2-experimento"]').innerHTML = `<div class="grid g2"><div class="stack"><p>Harás orificios a distintas alturas en una botella con agua y observarás los chorros. Primero predices, luego experimentas con un modelo interactivo y registras lo que observas.</p>
+    <p class="small muted">Esta actividad se completa cuando registras tus observaciones en el laboratorio.</p><div class="row"><a class="btn btn-yellow" href="#laboratorio">Ir al Laboratorio en acción</a></div></div>
+    <div class="sim-stage" style="padding:12px">${miniBottle()}</div></div>`;
+  const ex = $('[data-act="m2-ejercicios"]');
+  ex.innerHTML = ["m2-p1","m2-p2","m2-p3"].map((k,i)=>`<div class="slot-${k}" ${i?'style="border-top:1px dashed var(--line);padding-top:18px;margin-top:18px"':""}></div>`).join("");
+  const check = () => { if (["m2-p1","m2-p2","m2-p3"].every(k=>S.nums[k]?.solved)) markDone("m2-ejercicios"); };
+  ["m2-p1","m2-p2","m2-p3"].forEach(k => Numeric($(".slot-"+k, ex), NUMERIC[k], k, {onSolved:check}));
+  Classify($('[data-act="m2-aplicaciones"]'), "m2-aplicaciones", () => markDone("m2-aplicaciones"));
+}
+function miniBottle(){
+  return `<svg viewBox="0 0 240 150" role="img" aria-label="Botella con tres orificios: el chorro de abajo sale con más fuerza."><rect x="30" y="20" width="44" height="110" rx="8" class="f-surface" opacity=".7"/><rect x="30" y="38" width="44" height="92" rx="8" class="f-blue" opacity=".75"/><rect x="30" y="20" width="44" height="110" rx="8" fill="none" class="s-ink" stroke-width="2"/>
+  <path d="M74 58 Q92 62 100 140" fill="none" class="s-blue jet" stroke-width="3"/><path d="M74 84 Q110 90 128 140" fill="none" class="s-blue jet" stroke-width="3"/><path d="M74 110 Q130 114 160 140" fill="none" class="s-blue jet" stroke-width="3"/><path d="M10 140 H230" class="s-muted" stroke-width="2"/></svg>`;
+}
+
+function buildM3(acts){
+  acts.innerHTML = activityShell("m3-clasifica",1,"Clasifica fuentes luminosas","¿Produce luz? ¿Es natural o artificial?")
+    + activityShell("m3-explora",2,"Explora el comportamiento de la luz","Mueve el control y observa el rayo. Prueba los dos modos.")
+    + activityShell("m3-analiza",3,"Analiza ejemplos de espejos, agua y sombras","Situaciones que puedes ver en tu vereda.")
+    + activityShell("m3-quiz",4,"Cuestionario interactivo","Comprueba lo que aprendiste sobre la luz.");
+  Classify($('[data-act="m3-clasifica"]'), "m3-clasifica", () => markDone("m3-clasifica"));
+  LightSim($('[data-act="m3-explora"]'));
+  Quiz($('[data-act="m3-analiza"]'), "m3-analiza");
+  Quiz($('[data-act="m3-quiz"]'), "m3-quiz");
+}
+function LightSim(el){
+  let mode = "refl", ang = 40, n = 1.33;
+  el.innerHTML = `<div class="sim">
+    <div class="sim-stage"><svg viewBox="0 0 400 290" role="img" aria-labelledby="lsDesc"><desc id="lsDesc">Simulador de reflexión y refracción de la luz</desc><g id="lsG"></g></svg></div>
+    <div class="stack">
+      <div class="seg" role="group" aria-label="Fenómeno"><button type="button" aria-pressed="true" data-m="refl">Reflexión (espejo)</button><button type="button" aria-pressed="false" data-m="refr">Refracción (aire → material)</button></div>
+      <div class="slider"><div class="top"><label for="lsAng">Ángulo de incidencia</label><span class="mono" id="lsAngV">40°</span></div><input type="range" id="lsAng" min="0" max="80" value="40"></div>
+      <div class="field" id="lsMatBox" hidden><label class="fl" for="lsMat">Material</label><select id="lsMat"><option value="1.33">Agua (n = 1,33)</option><option value="1.47">Aceite de cocina (n ≈ 1,47)</option><option value="1.5">Vidrio (n ≈ 1,50)</option></select></div>
+      <div class="panel" aria-live="polite" id="lsOut"></div>
+      <p class="help">El ángulo se mide desde la normal (línea punteada perpendicular a la superficie).</p>
+      <a class="net-note" href="${PHET[1].u}" target="_blank" rel="noopener">${ICON.globe} Requiere internet · Simulación PhET «Doblando la luz»</a>
+    </div></div>`;
+  const G = $("#lsG", el);
+  const touch = () => { S.sim[mode] = true; save(); if (S.sim.refl && S.sim.refr) markDone("m3-explora"); };
+  function draw(){
+    const O = [200,150], L = 135, rad = ang*Math.PI/180;
+    const inc = [O[0]-L*Math.sin(rad), O[1]-L*Math.cos(rad)];
+    const ray = (a,b,cls,w,op=1) => `<path d="M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}" class="${cls}" stroke-width="${w}" stroke-linecap="round" opacity="${op}"/>`;
+    const arrow = (a,b,cls) => { const ang2 = Math.atan2(b[1]-a[1], b[0]-a[0]); const m = [(a[0]+b[0])/2,(a[1]+b[1])/2]; const p = (d,t)=>[m[0]+d*Math.cos(ang2+t), m[1]+d*Math.sin(ang2+t)]; const q1=p(-12,0.45), q2=p(-12,-0.45); return `<path d="M${m[0].toFixed(1)} ${m[1].toFixed(1)} L${q1[0].toFixed(1)} ${q1[1].toFixed(1)} L${q2[0].toFixed(1)} ${q2[1].toFixed(1)}Z" class="${cls}"/>`; };
+    let svg = "", out = "";
+    if (mode === "refl") {
+      const ref = [O[0]+L*Math.sin(rad), O[1]-L*Math.cos(rad)];
+      svg += `<rect x="40" y="150" width="320" height="12" rx="3" class="f-blue-soft"/><path d="M40 150 H360" class="s-blue" stroke-width="3"/><text x="300" y="182" font-size="13">espejo</text>`;
+      svg += `<path d="M200 20 V150" class="s-muted" stroke-width="2" stroke-dasharray="5 5"/><text x="206" y="32" font-size="12">normal</text>`;
+      svg += ray(inc,O,"s-ink",8,.15) + ray(inc,O,"s-yellow",4) + arrow(inc,O,"f-yellow");
+      svg += ray(O,ref,"s-ink",8,.15) + ray(O,ref,"s-yellow",4) + arrow(O,ref,"f-yellow");
+      svg += `<text x="${(O[0]-60).toFixed(0)}" y="135" font-size="13" text-anchor="middle">θᵢ = ${ang}°</text><text x="${(O[0]+60).toFixed(0)}" y="135" font-size="13" text-anchor="middle">θᵣ = ${ang}°</text>`;
+      out = `<b>Incidencia: ${ang}° · Reflexión: ${ang}°</b><p class="small">${ang===0 ? "Si la luz llega perpendicular, rebota por el mismo camino." : "La luz rebota con el mismo ángulo con el que llega. Por eso ves tu imagen en el espejo o en el agua quieta del jagüey."}</p>`;
+    } else {
+      const r = Math.asin(Math.sin(rad)/n), rd = r*180/Math.PI;
+      const refr = [O[0]+L*Math.sin(r), O[1]+L*Math.cos(r)];
+      const refl = [O[0]+L*0.8*Math.sin(rad), O[1]-L*0.8*Math.cos(rad)];
+      svg += `<rect x="0" y="150" width="400" height="140" class="f-blue-soft"/><path d="M0 150 H400" class="s-blue" stroke-width="2"/><text x="14" y="30" font-size="13">aire</text><text x="14" y="276" font-size="13">${n===1.33?"agua":n===1.5?"vidrio":"aceite"}</text>`;
+      svg += `<path d="M200 15 V285" class="s-muted" stroke-width="2" stroke-dasharray="5 5"/><text x="206" y="28" font-size="12">normal</text>`;
+      svg += ray(inc,O,"s-ink",8,.15) + ray(inc,O,"s-yellow",4) + arrow(inc,O,"f-yellow");
+      svg += ray(O,refl,"s-yellow",2.5,.35);
+      svg += ray(O,refr,"s-ink",8,.15) + ray(O,refr,"s-yellow",4) + arrow(O,refr,"f-yellow");
+      svg += `<text x="140" y="135" font-size="13" text-anchor="middle">θᵢ = ${ang}°</text><text x="${(O[0]+48).toFixed(0)}" y="190" font-size="13">θ = ${rd.toFixed(0)}°</text>`;
+      out = `<b>Incidencia: ${ang}° · Refractado: ${rd.toFixed(1).replace(".",",")}°</b><p class="small">${ang===0 ? "Si la luz entra perpendicular, no se desvía." : `Al entrar al material, la luz va más lenta y se acerca a la normal (${ang}° → ${rd.toFixed(0)}°). Por eso el palo en la quebrada parece quebrado.`} Una parte de la luz también se refleja (rayo tenue).</p>`;
+    }
+    G.innerHTML = svg; $("#lsOut", el).innerHTML = out; $("#lsAngV", el).textContent = ang + "°";
+  }
+  el.addEventListener("click", e => {
+    const b = e.target.closest("[data-m]"); if (!b) return;
+    mode = b.dataset.m; $$("[data-m]", el).forEach(x => x.setAttribute("aria-pressed", x===b ? "true" : "false"));
+    $("#lsMatBox", el).hidden = mode !== "refr"; draw(); touch();
+  });
+  $("#lsAng", el).addEventListener("input", e => { ang = +e.target.value; draw(); touch(); });
+  $("#lsMat", el).addEventListener("change", e => { n = +e.target.value; draw(); touch(); });
+  draw();
+}
+
+function projectGuide(){
+  const P = S.project;
+  return {title:"Plantilla del proyecto científico · ExploraFísica", sections:[
+    {h:"El reto", p:"¿Cómo podemos utilizar la Física para comprender o solucionar un problema de nuestra comunidad?"},
+    ...PROJECT_FIELDS.filter(f=>f.type!=="table").map(f=>({h:f.t, p:(P[f.k]||"").trim() || f.help, lines:(P[f.k]||"").trim()?0:3})),
+    {h:"Observaciones y datos", table:{cols:["Intento","Lo que cambiamos","Lo que medimos","Observaciones"], rows:(P.rows||[]).filter(r=>Object.values(r).some(v=>String(v).trim())).map(r=>[r.a||"",r.b||"",r.c||"",r.d||""]), blank:5}}
+  ]};
+}
+function buildM4(acts){
+  const P = S.project; if (!P.rows || !P.rows.length) P.rows = Array.from({length:4},(_,i)=>({a:String(i+1),b:"",c:"",d:""}));
+  acts.innerHTML = `<div class="panel"><span class="eyebrow">El desafío</span><h2>¿Cómo podemos utilizar la Física para comprender o solucionar un problema de nuestra comunidad?</h2>
+    <p>Trabajen en equipos de 3 o 4. Sigan los pasos de la plantilla. Se guarda automáticamente en este dispositivo.</p>
+    <div class="stack"><b>¿Sin ideas? Toca una para usarla como punto de partida:</b><div class="row">${IDEAS.map((x,i)=>`<button class="btn btn-ghost btn-sm" data-idea="${i}">${x}</button>`).join("")}</div></div></div>`
+    + activityShell("m4-proyecto",1,"Plantilla del proyecto científico","Completen al menos 8 de los 11 pasos para terminar la actividad.")
+    + activityShell("m4-comparte",2,"Compartan su trabajo","Publiquen un resumen en el mural de la comunidad y preséntenlo a sus compañeros.");
+  const box = $('[data-act="m4-proyecto"]');
+  box.innerHTML = `<div class="stack"><div class="row small" style="justify-content:space-between"><span>Pasos completados</span><span class="mono" id="pjCount"></span></div><div class="bar blue"><i id="pjBar"></i></div></div>
+    <div class="steps">${PROJECT_FIELDS.map(f=>`<div class="step"><div><label class="fl" for="pj-${f.k}">${f.t}</label><span class="help">${f.help}</span>
+      ${f.type==="input" ? `<input class="inp" id="pj-${f.k}" data-pj="${f.k}" maxlength="60" value="${esc(P[f.k]||"")}">` : f.type==="table" ? `<div class="tbl-wrap"><table><thead><tr><th>Intento</th><th>Lo que cambiamos</th><th>Lo que medimos</th><th>Observaciones</th></tr></thead><tbody>${P.rows.map((r,i)=>`<tr>${["a","b","c","d"].map(c=>`<td><input class="inp" aria-label="Fila ${i+1}, columna ${c}" data-row="${i}" data-col="${c}" value="${esc(r[c]||"")}"></td>`).join("")}</tr>`).join("")}</tbody></table></div><span id="pj-datos" hidden></span>` : `<textarea id="pj-${f.k}" data-pj="${f.k}">${esc(P[f.k]||"")}</textarea>`}
+      ${f.tip?`<span class="small muted">Fisi: ${f.tip}</span>`:""}</div></div>`).join("")}</div>
+    <div class="row"><button class="btn btn-primary" data-k="dl">Descargar plantilla</button><button class="btn btn-ghost" data-k="copy">Copiar como texto</button><button class="btn btn-ghost" data-k="clear">Borrar plantilla</button></div>
+    <p class="help" aria-live="polite" id="pjMsg">Se guarda automáticamente mientras escriben.</p>`;
+  const count = () => {
+    let n = PROJECT_FIELDS.filter(f=>f.type!=="table" && (P[f.k]||"").trim().length>2).length;
+    if (P.rows.some(r=>(r.b+r.c+r.d).trim())) n++;
+    $("#pjCount").textContent = `${n}/${PROJECT_FIELDS.length}`; $("#pjBar").style.width = (n/PROJECT_FIELDS.length*100)+"%";
+    if (n >= 8) markDone("m4-proyecto");
+    return n;
+  };
+  let tmr;
+  box.addEventListener("input", e => {
+    const t = e.target;
+    if (t.dataset.pj) P[t.dataset.pj] = t.value;
+    if (t.dataset.row) P.rows[+t.dataset.row][t.dataset.col] = t.value;
+    clearTimeout(tmr); tmr = setTimeout(() => { save(); count(); $("#pjMsg").textContent = "Guardado en este dispositivo."; }, 400);
+  });
+  let clearArmed = false;
+  box.addEventListener("click", e => {
+    const k = e.target.closest("[data-k]")?.dataset.k;
+    if (k === "dl") { const g = projectGuide(); offerFile("ExploraFisica-proyecto.html", guideHTML(g), guideText(g)); }
+    if (k === "copy") copyText(guideText(projectGuide()));
+    if (k === "clear") {
+      if (!clearArmed) { clearArmed = true; e.target.textContent = "Toca otra vez para confirmar"; setTimeout(()=>{ clearArmed=false; if (e.target.isConnected) e.target.textContent = "Borrar plantilla"; }, 4000); return; }
+      S.project = {rows:[]}; save(); route();
+    }
+  });
+  acts.addEventListener("click", e => {
+    const b = e.target.closest("[data-idea]"); if (!b) return;
+    const ta = $("#pj-problema"); ta.value = IDEAS[+b.dataset.idea]; P.problema = ta.value; save(); count(); ta.focus();
+  });
+  count();
+  const sh = $('[data-act="m4-comparte"]');
+  sh.innerHTML = `<div class="stack"><p>Al publicar, se crea un aporte en el mural de la comunidad con su pregunta, hipótesis y conclusión.</p>
+    <div class="notice warn">${ICON.warn}<div>El mural es demostrativo: el aporte se guarda solo en este dispositivo y no se envía a otros estudiantes. Para compartirlo de verdad, preséntenlo en clase, en una cartelera o en la emisora comunitaria.</div></div>
+    <div class="row"><button class="btn btn-yellow" data-k="share">Publicar resumen en el mural</button><a class="btn btn-ghost" href="#comunidad">Ver la comunidad</a></div></div>`;
+  $('[data-k="share"]', sh).onclick = () => {
+    if (!(P.pregunta||"").trim() || !(P.conclusion||"").trim()) { toast("Completen al menos la pregunta de investigación y la conclusión antes de compartir."); return; }
+    const text = `Pregunta: ${P.pregunta.trim()}\nHipótesis: ${(P.hipotesis||"—").trim()}\nConclusión: ${P.conclusion.trim()}`;
+    S.posts.unshift({id:"l"+Date.now(), who:(P.equipo||"Mi equipo").trim().slice(0,40), q:3, text:text.slice(0,900), date:new Date().toLocaleDateString("es-CO"), local:true});
+    save(); markDone("m4-comparte"); checkBadges(); location.hash = "#comunidad";
+  };
+}
+/* ================= LABORATORIO ================= */
+const HOLES = [{k:"A", h:19, n:"Superior"},{k:"B", h:12, n:"Medio"},{k:"C", h:5, n:"Inferior"}];
+function viewLab(app){
+  const L = S.lab;
+  app.innerHTML = `<div class="view">
+    <div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Laboratorio</span><span class="eyebrow">Experimentos de bajo costo</span><h1>Laboratorio en acción</h1></div>
+    <div class="notice warn">${ICON.warn}<div><b>Seguridad primero.</b> Realiza los experimentos con supervisión de tu docente. Los orificios los hace un adulto con una puntilla caliente o un punzón. Trabaja sobre una superficie que se pueda mojar y recoge el agua para reutilizarla en las plantas.</div></div>
+    ${fisiSay("Experimento principal: la botella con orificios.", "Primero predice, después experimenta y al final explica. Así trabajan los científicos.")}
+    <section class="grid g2">
+      <div class="card"><h3>Materiales</h3><ul class="ticks"><li>1 botella plástica de 1,5 o 2 litros</li><li>Puntilla o punzón (lo manipula un adulto)</li><li>Cinta de enmascarar</li><li>Agua (puede tener colorante)</li><li>Regla o metro</li><li>Bandeja o platón para recoger el agua</li></ul></div>
+      <div class="card"><h3>Pasos</h3><ol class="ticks"><li>Marca tres puntos alineados a 5, 12 y 19 cm de la base.</li><li>Con ayuda de un adulto, haz orificios del mismo tamaño en esas marcas.</li><li>Tapa los orificios con cinta y llena la botella hasta arriba.</li><li>Ubica la botella al borde de la mesa, sobre la bandeja.</li><li>Retira la cinta de los tres orificios al mismo tiempo.</li><li>Observa y mide hasta dónde llega cada chorro.</li></ol></div>
+    </section>
+    ${activityShell("lab-prediccion",1,"Predice antes de experimentar","Una predicción no se califica: es tu idea inicial.")}
+    ${activityShell("lab-modelo",2,"Explora el modelo interactivo","Cambia el nivel del agua y la altura de la mesa. Observa la rapidez y el alcance de cada chorro.")}
+    ${activityShell("lab-observacion",3,"Registra tus observaciones","Si hiciste el experimento real, anota tus medidas. Si no, describe lo que observaste en el modelo.")}
+    ${activityShell("lab-analisis",4,"Analiza y concluye","Responde con tus palabras y compara con tu predicción.")}
+    <section class="grid g2">
+      <div class="panel"><h3>Guía imprimible del laboratorio</h3><p class="small">Materiales, pasos, tabla de datos y preguntas para trabajar sin conexión.</p><div class="row"><button class="btn btn-ghost" id="labGuide">Descargar guía (HTML)</button></div></div>
+      <div class="panel"><h3>Simulaciones PhET</h3><p class="small">Simulaciones gratuitas de la Universidad de Colorado. <span class="net-note">${ICON.globe} Requieren internet</span></p>
+      <ul class="clean">${PHET.map(p=>`<li><a href="${p.u}" target="_blank" rel="noopener">${p.t}</a> <span class="small muted">· ${p.d}</span></li>`).join("")}</ul></div>
+    </section>
+    <section class="section"><div class="section-head"><h2>Más experimentos con materiales cotidianos</h2></div>
+      <div class="grid g2">
+        <details class="card"><summary><b>El lápiz quebrado (refracción)</b></summary><div class="stack small"><p><b>Materiales:</b> vaso transparente, agua, lápiz.</p><ol class="ticks"><li>Llena el vaso hasta la mitad.</li><li>Mete el lápiz inclinado.</li><li>Míralo de lado y desde arriba.</li></ol><p><b>Pregunta:</b> ¿por qué el lápiz parece quebrado justo en la superficie del agua? Compáralo con el simulador del Módulo 3.</p></div></details>
+        <details class="card"><summary><b>Presión y área con plastilina o barro</b></summary><div class="stack small"><p><b>Materiales:</b> barro o plastilina, una puntilla, una tapa de botella, un libro.</p><ol class="ticks"><li>Pon el libro sobre la tapa apoyada en el barro y mide la huella.</li><li>Repite con la puntilla de punta (con cuidado).</li><li>Compara la profundidad de las marcas.</li></ol><p><b>Pregunta:</b> con la misma fuerza, ¿por qué una marca es más profunda? Usa P = F ÷ A.</p></div></details>
+      </div></section>
+  </div>`;
+  hydrateStatuses(app);
+  // 1. Predicción
+  const pr = $('[data-act="lab-prediccion"]');
+  pr.innerHTML = `<div class="q"><p class="q-text">¿Por cuál orificio crees que el agua saldrá con más rapidez?</p>
+    <fieldset class="opts"><legend class="sr-only">Predicción</legend>${["Superior (19 cm)","Medio (12 cm)","Inferior (5 cm)","Los tres salen igual"].map((o,i)=>`<div class="opt"><input type="radio" name="pred" id="pred${i}" value="${i}" ${L.pred===i?"checked":""}><label for="pred${i}"><span class="key">${LETTERS[i]}</span><span>${o}</span></label></div>`).join("")}</fieldset>
+    <div class="field"><label class="fl" for="predWhy">¿Por qué lo crees?</label><textarea id="predWhy">${esc(L.predWhy||"")}</textarea></div>
+    <div class="row"><button class="btn btn-primary" id="predSave">Guardar predicción</button></div><p class="help" id="predMsg" aria-live="polite">${L.pred!==undefined?"Predicción guardada. Puedes cambiarla, pero lo valioso es compararla con lo que observes.":""}</p></div>`;
+  $("#predSave").onclick = () => {
+    const s = $('input[name="pred"]:checked'); if (!s) { $("#predMsg").textContent = "Elige una opción para guardar tu predicción."; return; }
+    L.pred = +s.value; L.predWhy = $("#predWhy").value; save(); markDone("lab-prediccion");
+    $("#predMsg").textContent = "Predicción guardada. Ahora explora el modelo."; drawCompare();
+  };
+  // 2. Modelo
+  const md = $('[data-act="lab-modelo"]');
+  md.innerHTML = `<div class="sim"><div class="sim-stage"><svg viewBox="0 0 470 290" role="img" aria-labelledby="btDesc"><desc id="btDesc">Modelo de una botella con tres orificios sobre una mesa. Los chorros se dibujan según el nivel del agua.</desc><g id="btG"></g></svg></div>
+    <div class="stack">
+      <div class="slider"><div class="top"><label for="btLvl">Nivel del agua</label><span class="mono" id="btLvlV"></span></div><input type="range" id="btLvl" min="6" max="30" value="28"></div>
+      <div class="slider"><div class="top"><label for="btTbl">Altura de la mesa</label><span class="mono" id="btTblV"></span></div><input type="range" id="btTbl" min="0" max="60" step="5" value="40"></div>
+      <div id="btCmp" aria-live="polite"></div>
+      <p class="help">Modelo ideal (sin rozamiento): rapidez v = √(2·g·h), donde h es la profundidad del orificio. En la botella real los chorros son un poco más cortos.</p>
+    </div></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Orificio</th><th class="num">Altura desde la base</th><th class="num">Profundidad</th><th class="num">Presión del agua</th><th class="num">Rapidez de salida</th><th class="num">Alcance</th></tr></thead><tbody id="btT"></tbody></table></div>
+    <div class="hint">${ICON.bulb}<div><b>Para investigar:</b> baja la mesa a 0 cm (botella en el suelo). ¿Sigue llegando más lejos el chorro inferior? La rapidez y el alcance no son lo mismo: el alcance también depende de la altura desde la que cae el agua.</div></div>`;
+  let lvl = 28, tbl = 40;
+  function drawBottle(){
+    const s = 2.6, gy = 270, base = gy - tbl*s, x0 = 40, x1 = 66;
+    let g = `<path d="M0 ${gy} H470" class="s-muted" stroke-width="2"/>`;
+    for (let c = 0; c <= 140; c += 10) { const x = x1 + c*s; if (x > 465) break; g += `<path d="M${x} ${gy} v${c%50===0?8:5}" class="s-muted" stroke-width="1.5"/>${c%20===0?`<text x="${x}" y="${gy+18}" font-size="10" text-anchor="middle" style="font-family:var(--font-mono)">${c}</text>`:""}`; }
+    g += `<text x="${x1+142*s>460?455:x1+142*s}" y="${gy-6}" font-size="10" text-anchor="end" style="fill:var(--muted)">cm</text>`;
+    if (tbl > 0) g += `<rect x="10" y="${base}" width="60" height="7" rx="2" class="f-skin2"/><rect x="16" y="${base+7}" width="6" height="${gy-base-7}" class="f-skin2"/><rect x="58" y="${base+7}" width="6" height="${gy-base-7}" class="f-skin2"/>`;
+    g += `<rect x="${x0}" y="${base-30*s}" width="${x1-x0}" height="${30*s}" rx="5" class="f-surface" opacity=".75"/>`;
+    g += `<rect x="${x0}" y="${base-lvl*s}" width="${x1-x0}" height="${lvl*s}" rx="4" class="f-blue" opacity=".8"/>`;
+    g += `<rect x="${x0}" y="${base-30*s}" width="${x1-x0}" height="${30*s}" rx="5" fill="none" class="s-ink" stroke-width="2"/><rect x="${x0+7}" y="${base-30*s-8}" width="12" height="8" rx="2" class="f-green"/>`;
+    let rows = "";
+    HOLES.forEach(H => {
+      const hy = base - H.h*s, d = lvl - H.h;
+      g += `<circle cx="${x1}" cy="${hy}" r="3" class="f-ink"/><text x="${x0-8}" y="${hy+4}" font-size="11" text-anchor="end" font-weight="700">${H.k}</text>`;
+      if (d <= 0) { rows += `<tr><td>${H.k} · ${H.n}</td><td class="num">${H.h} cm</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">No sale agua</td></tr>`; return; }
+      const Y = tbl + H.h, R = 2*Math.sqrt(d*Y), v = Math.sqrt(2*9.8*d/100), P = 1000*9.8*d/100;
+      let pts = []; for (let k = 0; k <= 24; k++) { const t = k/24; pts.push(`${(x1 + R*s*t).toFixed(1)},${(hy + Y*s*t*t).toFixed(1)}`); }
+      g += `<polyline points="${pts.join(" ")}" fill="none" class="s-blue jet" stroke-width="3" stroke-linecap="round"/><circle cx="${(x1+R*s).toFixed(1)}" cy="${gy}" r="4" class="f-blue"/><text x="${(x1+R*s).toFixed(1)}" y="${gy-9}" font-size="11" text-anchor="middle" font-weight="700">${H.k}</text>`;
+      rows += `<tr><td>${H.k} · ${H.n}</td><td class="num">${H.h} cm</td><td class="num">${d} cm</td><td class="num">${fmt(P)} Pa</td><td class="num">${fmt(v,2)} m/s</td><td class="num">${fmt(R,0)} cm</td></tr>`;
+    });
+    $("#btG").innerHTML = g; $("#btT").innerHTML = rows;
+    $("#btLvlV").textContent = lvl + " cm"; $("#btTblV").textContent = tbl + " cm";
+  }
+  function drawCompare(){
+    const box = $("#btCmp"); if (!box) return;
+    if (L.pred === undefined) { box.innerHTML = `<div class="fb info"><span class="fb-t">Consejo</span><p>Guarda primero tu predicción (actividad 1) para compararla con el modelo.</p></div>`; return; }
+    box.innerHTML = L.pred === 2
+      ? `<div class="fb ok"><span class="fb-t">Tu predicción coincide</span><p>El orificio inferior tiene más agua encima, más presión y mayor rapidez de salida.</p></div>`
+      : `<div class="fb info"><span class="fb-t">Compara con tu predicción</span><p>Predijiste «${["superior","medio","inferior","los tres igual"][L.pred]}». Mira la columna de rapidez: el orificio con más agua encima (inferior) siempre sale más rápido. ¡Cambiar de idea con evidencia es hacer ciencia!</p></div>`;
+  }
+  $("#btLvl").oninput = e => { lvl = +e.target.value; drawBottle(); markDone("lab-modelo", true); };
+  $("#btTbl").oninput = e => { tbl = +e.target.value; drawBottle(); markDone("lab-modelo", true); };
+  drawBottle(); drawCompare();
+  // 3. Observaciones
+  const ob = $('[data-act="lab-observacion"]'); const m = L.meas || {A:"",B:"",C:""};
+  ob.innerHTML = `<div class="stack"><div class="tbl-wrap"><table><thead><tr><th>Orificio</th><th>Alcance medido (cm)</th><th>¿Cómo se ve el chorro?</th></tr></thead><tbody>
+    ${HOLES.map(H=>`<tr><td>${H.k} · ${H.n}</td><td><input class="inp mono" inputmode="decimal" aria-label="Alcance del orificio ${H.k}" data-m="${H.k}" value="${esc(m[H.k]||"")}"></td><td><input class="inp" aria-label="Descripción del chorro ${H.k}" data-md="${H.k}" value="${esc((L.desc||{})[H.k]||"")}"></td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="field"><label class="fl" for="obsTxt">¿Qué observaste? ¿Qué pasó cuando el nivel del agua bajó?</label><textarea id="obsTxt">${esc(L.obs||"")}</textarea></div>
+    <div class="row"><button class="btn btn-primary" id="obsSave">Guardar observaciones</button></div><p class="help" id="obsMsg" aria-live="polite"></p></div>`;
+  $("#obsSave").onclick = () => {
+    L.meas = {}; L.desc = {}; $$("[data-m]", ob).forEach(i => L.meas[i.dataset.m] = i.value); $$("[data-md]", ob).forEach(i => L.desc[i.dataset.md] = i.value);
+    L.obs = $("#obsTxt").value; save();
+    const okd = Object.values(L.meas).filter(v=>v.trim()).length >= 2 || L.obs.trim().length >= 20;
+    $("#obsMsg").textContent = okd ? "Observaciones guardadas en este dispositivo." : "Guardado. Anota al menos dos medidas o una descripción de 20 caracteres o más para completar la actividad.";
+    if (okd) markDone("lab-observacion");
+  };
+  // 4. Análisis
+  const an = $('[data-act="lab-analisis"]'); const A = L.an || {};
+  const QS = ["¿Por qué el agua sale con más rapidez por el orificio inferior?","¿Tu predicción coincidió con lo observado? ¿Qué cambiarías de tu idea inicial?","¿Dónde ves este fenómeno en tu comunidad? (tanques, represas, mangueras…)"];
+  an.innerHTML = `<div class="stack">${QS.map((q,i)=>`<div class="field"><label class="fl" for="an${i}">${i+1}. ${q}</label><textarea id="an${i}" data-an="${i}">${esc(A[i]||"")}</textarea></div>`).join("")}
+    <div class="row"><button class="btn btn-primary" id="anSave">Guardar análisis</button></div><p class="help" id="anMsg" aria-live="polite"></p>
+    <h4>Comprueba lo que entendiste</h4><div id="labQuiz"></div></div>`;
+  $("#anSave").onclick = () => {
+    L.an = {}; $$("[data-an]", an).forEach(t => L.an[t.dataset.an] = t.value); save();
+    const n = Object.values(L.an).filter(v=>v.trim().length>=10).length;
+    $("#anMsg").textContent = n >= 2 ? "Análisis guardado. ¡Buen trabajo científico!" : `Guardado. Responde al menos 2 preguntas (llevas ${n}) para completar la actividad.`;
+    if (n >= 2) markDone("lab-analisis");
+  };
+  Quiz($("#labQuiz"), "lab-quiz");
+  $("#labGuide").onclick = () => {
+    const g = {title:"Laboratorio: presión hidrostática con una botella", sections:[
+      {h:"Seguridad", p:"Trabaja con supervisión docente. Un adulto hace los orificios. Recoge y reutiliza el agua."},
+      {h:"Materiales", list:["Botella plástica de 1,5 o 2 L","Puntilla o punzón (lo usa un adulto)","Cinta de enmascarar","Agua","Regla o metro","Bandeja"]},
+      {h:"Pasos", ol:true, list:["Marca puntos a 5, 12 y 19 cm de la base.","Haz orificios del mismo tamaño (adulto).","Tapa con cinta y llena la botella.","Ubica la botella al borde de la mesa.","Retira la cinta al mismo tiempo.","Mide el alcance de cada chorro."]},
+      {h:"Predicción: ¿por cuál orificio saldrá el agua con más rapidez? ¿Por qué?", lines:3},
+      {h:"Datos", table:{cols:["Orificio","Altura (cm)","Alcance medido (cm)","¿Cómo se ve el chorro?"], rows:[["A · Superior","19","",""],["B · Medio","12","",""],["C · Inferior","5","",""]]}},
+      {h:"Análisis", ol:true, list:QS, lines:6},
+      {h:"Idea científica", p:"La presión hidrostática aumenta con la profundidad: P = ρ · g · h. Por eso el agua sale más rápido por el orificio que tiene más agua encima."}
+    ]};
+    offerFile("ExploraFisica-laboratorio-botella.html", guideHTML(g), guideText(g));
+  };
+}
+
+/* ================= RETOS ================= */
+let currentLevel = "explorador";
+function viewRetos(app){
+  app.innerHTML = `<div class="view">
+    <div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Retos</span><span class="eyebrow">Comprensión y razonamiento</span><h1>Retos científicos</h1><p class="muted">Tres niveles. Las pistas son opcionales. Puedes intentar cuantas veces quieras.</p></div>
+    ${fisiSay("¿Listo para pensar como científico?", "Estos retos no se resuelven memorizando: razona, calcula y explica.", true)}
+    <div class="level-tabs" role="tablist" aria-label="Niveles">${LEVELS.map(l=>{ const s = CHALLENGES.filter(c=>c.lvl===l.id); const d = s.filter(c=>S.chal[c.id]?.solved).length; return `<button role="tab" id="tab-${l.id}" aria-selected="${l.id===currentLevel}" aria-controls="lvlPanel" data-l="${l.id}"><span><span class="lv">Nivel ${l.n}</span>${l.name}</span><span class="chip ${d===s.length?"ok":""}">${d}/${s.length}</span></button>`;}).join("")}</div>
+    <div id="lvlPanel" role="tabpanel" class="stack" style="gap:20px"></div>
+    <section class="section"><div class="section-head"><h2>Tus insignias</h2></div><div class="badges">${BADGES.map(b=>`<div class="badge ${S.badges[b.id]?"":"locked"}">${badgeSVG(b)}<b>${b.name}</b><span>${S.badges[b.id]?"Desbloqueada":b.desc}</span></div>`).join("")}</div></section></div>`;
+  $(".level-tabs").onclick = e => { const b = e.target.closest("[data-l]"); if (!b) return; currentLevel = b.dataset.l; viewRetos(app); $(`#tab-${currentLevel}`).focus(); };
+  const panel = $("#lvlPanel"), L = LEVELS.find(l=>l.id===currentLevel), list = CHALLENGES.filter(c=>c.lvl===currentLevel);
+  panel.innerHTML = `<div class="panel"><h2>Nivel ${L.n}: ${L.name}</h2><p>${L.desc}</p></div>` + list.map((c,i)=>`<section class="activity"><div class="activity-head"><div class="t"><span class="eyebrow">Reto ${i+1} · ${TOPICS[c.topic].label}</span></div><span class="status ${S.chal[c.id]?.solved?"done":""}" id="cs-${c.id}">${S.chal[c.id]?.solved?"✓ Superado":"Por resolver"}</span></div><div id="ch-${c.id}"></div></section>`).join("");
+  list.forEach(c => {
+    const el = $("#ch-" + c.id); const rec = () => (S.chal[c.id] = S.chal[c.id] || {solved:false, hints:0, wrong:0});
+    const solved = () => { const r = rec(); if (r.solved) return; r.solved = true; save(); const s = $("#cs-"+c.id); s.className = "status done"; s.textContent = "✓ Superado"; levelCheck(); };
+    if (c.type === "mcq") MCQ(el, c, {hintButton:true, onHint:()=>{ rec().hints++; save(); }, onCheck:(ok)=>{ if (ok) solved(); else { rec().wrong++; save(); toast(pick(MOTIVATION)); } }});
+    else Numeric(el, c, c.id, {store:{}, onSolved:()=>solved(), onWrong:()=>{ rec().wrong++; save(); }, onHint:()=>{ rec().hints++; save(); }});
+  });
+}
+function levelCheck(){
+  LEVELS.forEach(l => {
+    const s = CHALLENGES.filter(c=>c.lvl===l.id);
+    if (s.every(c=>S.chal[c.id]?.solved)) { award(l.id); if (s.every(c=>!(S.chal[c.id].hints))) award("sin-pistas"); }
+  });
+  const tab = $(`#tab-${currentLevel} .chip`);
+  if (tab) { const s = CHALLENGES.filter(c=>c.lvl===currentLevel); const d = s.filter(c=>S.chal[c.id]?.solved).length; tab.textContent = `${d}/${s.length}`; tab.className = "chip" + (d===s.length?" ok":""); }
+  $$(".badge").forEach((el,i) => { const b = BADGES[i]; if (S.badges[b.id]) { el.classList.remove("locked"); $("span", el).textContent = "Desbloqueada"; } });
+}
+
+/* ================= MI PROGRESO ================= */
+function viewProgreso(app){
+  const allActs = Object.values(MODULES).flatMap(m=>m.activities.map(a=>a[0])).concat(["lab-prediccion","lab-observacion","lab-analisis"]);
+  const actsDone = allActs.filter(isDone).length;
+  const visited = ["m1","m2","m3","m4"].filter(k=>S.visited[k]).length;
+  const chalDone = CHALLENGES.filter(c=>S.chal[c.id]?.solved).length;
+  const badges = BADGES.filter(b=>S.badges[b.id]).length;
+  const weak = weakTopics();
+  const qNames = Object.entries(QUIZZES);
+  app.innerHTML = `<div class="view">
+    <div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Mi progreso</span><h1>Mi progreso</h1><p class="muted">Se guarda solo en este navegador${storageOK?"":" (en este momento el navegador no permite guardar: el progreso se perderá al cerrar la página)"}.</p></div>
+    <div class="grid g4">
+      <div class="stat"><span class="n mono">${visited}/4</span><span class="l">Módulos visitados</span></div>
+      <div class="stat"><span class="n mono">${actsDone}/${allActs.length}</span><span class="l">Actividades completadas</span></div>
+      <div class="stat"><span class="n mono">${chalDone}/${CHALLENGES.length}</span><span class="l">Retos superados</span></div>
+      <div class="stat"><span class="n mono">${badges}/${BADGES.length}</span><span class="l">Insignias</span></div>
+    </div>
+    <section class="section"><div class="section-head"><h2>Temas recomendados para reforzar</h2><p class="muted small">Se calculan con reglas sencillas a partir de tu diagnóstico, cuestionarios, ejercicios y retos.</p></div>
+      ${weak.length ? `<div class="grid g3">${weak.map(t=>`<div class="card"><span class="chip yellow" style="justify-self:start">${TOPICS[t].label}</span><p>${TOPICS[t].tip}</p><p class="small muted">Ejemplo: ${TOPICS[t].ex}</p><a class="btn btn-ghost btn-sm" href="#${TOPICS[t].mod}">Repasar en el Módulo ${MODULES[TOPICS[t].mod].n}</a></div>`).join("")}</div>`
+      : `<div class="panel"><p>${Object.keys(S.acts).length || S.diag ? "¡Por ahora no hay temas pendientes! Prueba los retos de nivel Científico." : `Aún no hay datos. Empieza con el <a href="#diagnostico">diagnóstico</a>.`}</p></div>`}
+    </section>
+    <section class="section"><div class="section-head"><h2>Módulos y actividades</h2></div>
+      <div class="grid g2">${["m1","m2","m3","m4"].map(k=>{ const M = MODULES[k], p = modProgress(k); return `<div class="card"><div class="row" style="justify-content:space-between"><h3>Módulo ${M.n}. ${M.short}</h3><span class="chip ${S.visited[k]?"green":""}">${S.visited[k]?"Visitado":"Sin visitar"}</span></div><div class="bar"><i style="width:${p.done/p.total*100}%"></i></div><ul class="clean small">${M.activities.map(([a,l])=>`<li>${isDone(a)?"✓":"○"} ${l}</li>`).join("")}</ul><a class="btn btn-ghost btn-sm" href="#${k}" style="justify-self:start">Abrir módulo</a></div>`;}).join("")}
+      <div class="card"><div class="row" style="justify-content:space-between"><h3>Laboratorio</h3></div><ul class="clean small">${[["lab-prediccion","Predicción"],["lab-observacion","Observaciones"],["lab-analisis","Análisis"]].map(([a,l])=>`<li>${isDone(a)?"✓":"○"} ${l}</li>`).join("")}</ul><a class="btn btn-ghost btn-sm" href="#laboratorio" style="justify-self:start">Abrir laboratorio</a></div></div>
+    </section>
+    <section class="section"><div class="section-head"><h2>Resultados de los cuestionarios</h2></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Cuestionario</th><th class="num">Último</th><th class="num">Mejor</th><th class="num">Intentos</th><th>Acción</th></tr></thead><tbody>
+      <tr><td>Diagnóstico inicial</td><td class="num">${S.diag?DIAG.filter((q,i)=>S.diag.answers[i]===q.a).length+"/5":"—"}</td><td class="num">—</td><td class="num">${S.diag?1:0}</td><td><a href="#diagnostico">${S.diag?"Ver o repetir":"Hacer"}</a></td></tr>
+      ${qNames.map(([k,q])=>{ const r = S.quizzes[k]; return `<tr><td>${q.title}</td><td class="num">${r?r.last+"/"+r.total:"—"}</td><td class="num">${r?r.best+"/"+r.total:"—"}</td><td class="num">${r?r.attempts:0}</td><td><a href="#${q.mod==="lab"?"laboratorio":q.mod}">${r?"Repetir":"Hacer"}</a></td></tr>`;}).join("")}
+      </tbody></table></div></section>
+    <section class="section"><div class="section-head"><h2>Retos e insignias</h2></div>
+      <div class="grid g3">${LEVELS.map(l=>{ const s = CHALLENGES.filter(c=>c.lvl===l.id); const d = s.filter(c=>S.chal[c.id]?.solved).length; return `<div class="stat"><span class="n mono">${d}/${s.length}</span><span class="l">Nivel ${l.n}: ${l.name}</span><div class="bar yellow"><i style="width:${d/s.length*100}%"></i></div></div>`;}).join("")}</div>
+      <div class="badges">${BADGES.map(b=>`<div class="badge ${S.badges[b.id]?"":"locked"}">${badgeSVG(b)}<b>${b.name}</b><span>${S.badges[b.id]?"Desbloqueada":b.desc}</span></div>`).join("")}</div></section>
+    <section class="grid g2">
+      <div class="panel"><h3>Resumen para tu docente</h3><p class="small">Descarga un archivo de texto con tu avance. No incluye datos personales.</p><div class="row"><button class="btn btn-ghost" id="sumDl">Descargar resumen</button><button class="btn btn-ghost" id="sumCopy">Copiar resumen</button></div></div>
+      <div class="panel"><h3>Reiniciar</h3><p class="small">Útil si compartes el dispositivo o quieres empezar de nuevo.</p>
+        <div class="row"><button class="btn btn-ghost" id="rstQ">Repetir cuestionarios y retos</button><button class="btn btn-danger" id="rstAll">Reiniciar todo</button></div><p class="help" id="rstMsg" aria-live="polite"></p></div>
+    </section></div>`;
+  const summary = () => {
+    const lines = ["ExploraFísica · Resumen de progreso", "Fecha: " + new Date().toLocaleDateString("es-CO"), "",
+      `Módulos visitados: ${visited}/4`, `Actividades completadas: ${actsDone}/${allActs.length}`, `Retos superados: ${chalDone}/${CHALLENGES.length}`, `Insignias: ${BADGES.filter(b=>S.badges[b.id]).map(b=>b.name).join(", ") || "ninguna"}`, "",
+      "Cuestionarios:", (S.diag ? `- Diagnóstico: ${DIAG.filter((q,i)=>S.diag.answers[i]===q.a).length}/5` : "- Diagnóstico: sin hacer"),
+      ...qNames.map(([k,q]) => `- ${q.title}: ${S.quizzes[k] ? `último ${S.quizzes[k].last}/${S.quizzes[k].total}, mejor ${S.quizzes[k].best}/${S.quizzes[k].total}` : "sin hacer"}`), "",
+      "Temas para reforzar: " + (weak.map(t=>TOPICS[t].label).join(", ") || "ninguno por ahora"), "",
+      "Actividades:", ...allActs.map(a => `${isDone(a)?"[x]":"[ ]"} ${a}`)];
+    return lines.join("\n");
+  };
+  $("#sumDl").onclick = () => offerFile("ExploraFisica-resumen.txt", summary());
+  $("#sumCopy").onclick = () => copyText(summary());
+  const arm = (btn, label, fn) => { let armed = false; btn.onclick = () => { if (!armed) { armed = true; btn.textContent = "Toca otra vez para confirmar"; $("#rstMsg").textContent = "Esta acción no se puede deshacer."; setTimeout(()=>{ armed=false; if (btn.isConnected) { btn.textContent = label; $("#rstMsg").textContent = ""; } }, 6000); return; } fn(); }; };
+  arm($("#rstQ"), "Repetir cuestionarios y retos", () => { S.quizzes = {}; S.chal = {}; S.nums = {}; S.cls = {}; ["m1-quiz","m2-situaciones","m3-analiza","m3-quiz","m1-problema","m2-ejercicios","m1-identifica","m2-aplicaciones","m3-clasifica"].forEach(k=>delete S.acts[k]); ["explorador","investigador","cientifico","sin-pistas"].forEach(k=>delete S.badges[k]); save(); toast("Cuestionarios y retos reiniciados."); route(); });
+  arm($("#rstAll"), "Reiniciar todo", () => { S = fresh(); save(); toast("Progreso reiniciado. ¡Listo para empezar de nuevo!"); location.hash = "#inicio"; route(); });
+}
+
+/* ================= COMUNIDAD ================= */
+let commFilter = -1;
+function viewComunidad(app){
+  const posts = S.posts.map(p=>({...p, local:true})).concat(DEMO_POSTS);
+  const shown = posts.filter(p => commFilter < 0 || p.q === commFilter);
+  app.innerHTML = `<div class="view">
+    <div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Comunidad</span><span class="eyebrow">Aprendizaje colaborativo</span><h1>Comunidad científica</h1><p class="muted">Un mural para compartir lo que aprendimos y descubrimos.</p></div>
+    <div class="notice">${ICON.info}<div><b>Mural demostrativo.</b> Los aportes marcados como «Ejemplo» son ilustrativos y no fueron escritos por estudiantes reales. Lo que publiques aquí se guarda <b>solo en este dispositivo</b>: no se envía a internet ni lo ven otras personas.</div></div>
+    <section class="section"><div class="section-head"><h2>Preguntas orientadoras</h2></div>
+      <div class="row"><button class="btn btn-sm ${commFilter<0?"btn-primary":"btn-ghost"}" data-f="-1">Todas</button>${GUIDING.map((g,i)=>`<button class="btn btn-sm ${commFilter===i?"btn-primary":"btn-ghost"}" data-f="${i}">${g}</button>`).join("")}</div></section>
+    <div class="grid g2" style="align-items:start">
+      <section class="card" aria-labelledby="h-new"><h3 id="h-new">Escribe un aporte</h3>
+        <div class="field"><label class="fl" for="cQ">Pregunta orientadora</label><select id="cQ">${GUIDING.map((g,i)=>`<option value="${i}">${g}</option>`).join("")}</select></div>
+        <div class="field"><label class="fl" for="cWho">Nombre del equipo</label><input class="inp" id="cWho" maxlength="40" placeholder="Ej.: Equipo Los Guaduales"><span class="help">No escribas nombres completos, teléfonos ni direcciones.</span></div>
+        <div class="field"><label class="fl" for="cTxt">Tu aporte</label><textarea id="cTxt" maxlength="600" placeholder="Cuenta qué aprendieron, qué observaron o cómo lo aplicarían en la vereda."></textarea><span class="help" id="cCount">0/600</span></div>
+        <div class="checks"><label><input type="checkbox" class="cChk"> Escribí con respeto hacia mis compañeros.</label><label><input type="checkbox" class="cChk"> Verifiqué la información o cité de dónde la saqué.</label><label><input type="checkbox" class="cChk"> No incluí datos personales.</label></div>
+        <p class="help" id="cWarn" aria-live="polite"></p>
+        <button class="btn btn-yellow" id="cPub" disabled>Publicar en este dispositivo</button>
+      </section>
+      <section class="stack" aria-labelledby="h-wall"><h3 id="h-wall">Mural de aportes (${shown.length})</h3><div class="stack" id="wall" style="gap:14px">${shown.map(postHTML).join("") || `<p class="muted">No hay aportes para esta pregunta todavía.</p>`}</div></section>
+    </div>
+    <section class="section"><div class="section-head"><h2>Ciudadanía digital</h2></div>
+      <div class="grid g4">
+        <div class="card"><h4>Respeto</h4><p class="small">Comenta las ideas, no a las personas. Agradece y pregunta.</p></div>
+        <div class="card"><h4>Verifica</h4><p class="small">¿Quién lo dice? ¿Qué evidencia hay? ¿Otras fuentes confiables coinciden?</p></div>
+        <div class="card"><h4>Cuida tu privacidad</h4><p class="small">No publiques nombres completos, fotos de personas, teléfonos ni ubicaciones exactas.</p></div>
+        <div class="card"><h4>Usa la tecnología con ética</h4><p class="small">Cita las fuentes y reconoce el trabajo de tus compañeros.</p></div>
+      </div>
+      <div class="panel small"><b>¿Cómo hacerlo real?</b> Para que los aportes lleguen a otros estudiantes se necesita un servidor con base de datos (por ejemplo, Firebase o Supabase) o una plataforma institucional con foros, como Moodle. Sin conexión, el mural puede hacerse en una cartelera del salón.</div>
+    </section></div>`;
+  $$("[data-f]", app).forEach(b => b.onclick = () => { commFilter = +b.dataset.f; viewComunidad(app); });
+  const txt = $("#cTxt"), pub = $("#cPub"), warn = $("#cWarn");
+  const validate = () => {
+    $("#cCount").textContent = `${txt.value.length}/600`;
+    const all = txt.value + " " + $("#cWho").value;
+    const pii = /\b\d{7,}\b|\S+@\S+\.\S+|\b3\d{2}[\s-]?\d{3}[\s-]?\d{4}\b/.test(all);
+    warn.textContent = pii ? "Parece que escribiste un teléfono o correo. Retíralo antes de publicar." : "";
+    pub.disabled = pii || txt.value.trim().length < 10 || !$$(".cChk").every(c=>c.checked);
+  };
+  app.addEventListener("input", e => { if (e.target.closest("#h-new") || e.target.closest(".card")) validate(); });
+  $$(".cChk").forEach(c => c.onchange = validate);
+  pub.onclick = () => {
+    S.posts.unshift({id:"l"+Date.now(), who:($("#cWho").value.trim()||"Mi equipo"), q:+$("#cQ").value, text:txt.value.trim(), date:new Date().toLocaleDateString("es-CO"), local:true});
+    save(); checkBadges(); toast("Aporte guardado en este dispositivo."); viewComunidad(app);
+  };
+  $("#wall").addEventListener("click", e => {
+    const b = e.target.closest("[data-a]"); if (!b) return; const id = b.dataset.id;
+    if (b.dataset.a === "like") { S.likes[id] = !S.likes[id]; save(); viewComunidad(app); }
+    if (b.dataset.a === "cm") { const inp = $(`#cm-${id}`); const v = inp.value.trim(); if (v.length < 2) return; if (/\b\d{7,}\b|\S+@\S+\.\S+/.test(v)) { toast("Retira teléfonos o correos del comentario."); return; } (S.comments[id] = S.comments[id] || []).push({who:"Tú (este dispositivo)", text:v.slice(0,300)}); save(); viewComunidad(app); }
+    if (b.dataset.a === "del") { if (b.dataset.armed) { S.posts = S.posts.filter(p=>p.id!==id); delete S.comments[id]; save(); viewComunidad(app); } else { b.dataset.armed = "1"; b.textContent = "Toca otra vez para borrar"; } }
+  });
+}
+function postHTML(p){
+  const cms = (p.comments||[]).concat(S.comments[p.id]||[]);
+  return `<article class="post"><div class="who"><span class="avatar" aria-hidden="true">${esc((p.who||"?").trim()[0]||"?").toUpperCase()}</span><div><b>${esc(p.who)}</b><br><span class="small muted">${esc(GUIDING[p.q]||"")}</span></div>
+    <span class="tag-demo ${p.local?"tag-local":""}" style="margin-left:auto">${p.local?"Solo en este dispositivo":"Ejemplo"}</span></div>
+    <p class="body">${esc(p.text)}</p>
+    ${cms.length?`<div class="comments">${cms.map(c=>`<p class="comment"><b>${esc(c.who)}:</b> ${esc(c.text)}</p>`).join("")}</div>`:""}
+    <div class="row"><label class="sr-only" for="cm-${p.id}">Comentar</label><input class="inp" id="cm-${p.id}" maxlength="300" placeholder="Escribe un comentario respetuoso" style="flex:1 1 200px;min-height:44px"><button class="btn btn-ghost btn-sm" data-a="cm" data-id="${p.id}">Comentar</button>
+    <button class="btn btn-sm ${S.likes[p.id]?"btn-green":"btn-ghost"}" data-a="like" data-id="${p.id}" aria-pressed="${!!S.likes[p.id]}">Me sirvió</button>
+    ${p.local?`<button class="btn btn-ghost btn-sm" data-a="del" data-id="${p.id}">Borrar</button>`:""}</div></article>`;
+}
+
+/* ================= ACERCA DEL OVA ================= */
+function viewAcerca(app){
+  const th = [
+    ["Constructivismo","Piaget","El estudiante construye su conocimiento explorando y reflexionando.","Predicciones antes del experimento, simuladores para probar variables y preguntas de análisis."],
+    ["Aprendizaje significativo","Ausubel","Lo nuevo se conecta con lo que ya se sabe.","Diagnóstico inicial, ejemplos de la vereda (chiva, jagüey, tanque elevado) y recomendaciones según las respuestas."],
+    ["Teoría sociocultural","Vygotsky","La interacción y el acompañamiento permiten avanzar más allá de lo que se logra solo (zona de desarrollo próximo).","Pistas graduadas de Fisi, trabajo en equipo en el reto colaborativo y el papel del docente."],
+    ["Aprendizaje experiencial","Dewey","Observar, experimentar y reflexionar conecta el conocimiento con la realidad.","Laboratorio de bajo costo, observación del entorno y proyecto sobre un problema de la comunidad."],
+    ["Cibercultura e inteligencia colectiva","Lévy","Las tecnologías facilitan comunicar y construir conocimiento de forma compartida.","Mural de la comunidad, preguntas orientadoras y normas de ciudadanía digital."]
+  ];
+  app.innerHTML = `<div class="view">
+    <div class="section-head"><span class="crumbs"><a href="#inicio">Inicio</a> / Propósito</span><h1>Propósito</h1></div>
+    <section class="section"><div class="section-head"><h2>Fundamento pedagógico</h2></div>
+      <div class="grid g3">${th.map(t=>`<article class="card theory"><span class="eyebrow">${t[1]}</span><span class="who">${t[0]}</span><p class="small">${t[2]}</p><p class="small"><b>En el OVA:</b> ${t[3]}</p></article>`).join("")}</div></section></div>`;
+}
+
+/* ================= ENRUTADOR ================= */
+const ROUTES = {inicio:viewHome, diagnostico:viewDiag, modulos:viewModules, m1:a=>viewModule(a,"m1"), m2:a=>viewModule(a,"m2"), m3:a=>viewModule(a,"m3"), m4:a=>viewModule(a,"m4"), laboratorio:viewLab, retos:viewRetos, progreso:viewProgreso, comunidad:viewComunidad, acerca:viewAcerca};
+const NAVMAP = {diagnostico:"modulos", m1:"modulos", m2:"modulos", m3:"modulos", m4:"modulos"};
+let firstRoute = true;
+function route(){
+  const h = location.hash.replace("#","") || "inicio";
+  const key = ROUTES[h] ? h : "inicio";
+  const app = $("#app");
+  const fresh = app.cloneNode(false); app.replaceWith(fresh);
+  ROUTES[key](fresh);
+  const navKey = NAVMAP[key] || key;
+  $$("#nav a").forEach(a => a.getAttribute("href") === "#"+navKey ? a.setAttribute("aria-current","page") : a.removeAttribute("aria-current"));
+  $("#nav").classList.remove("open"); $("#menuBtn").setAttribute("aria-expanded","false");
+  if (!firstRoute) { window.scrollTo(0,0); const h1 = $("h1", fresh); if (h1) { h1.setAttribute("tabindex","-1"); h1.focus({preventScroll:true}); } }
+  firstRoute = false;
+}
+window.addEventListener("hashchange", route);
+$("#menuBtn").onclick = () => { const o = $("#nav").classList.toggle("open"); $("#menuBtn").setAttribute("aria-expanded", String(o)); };
+function netState(){ const on = navigator.onLine !== false; const n = $("#net"); n.textContent = on ? "En línea" : "Sin conexión: puedes seguir trabajando"; n.classList.toggle("off", !on); }
+window.addEventListener("online", netState); window.addEventListener("offline", netState);
+netState(); route();
+if (!storageOK) toast("Este navegador no permite guardar el progreso. Puedes usar el OVA, pero se perderá al cerrar la página.");
+$("#skipLink").addEventListener("click", e => { e.preventDefault(); const m = $("#app"); m.focus(); });
+</script></body></html>
